@@ -2,6 +2,15 @@
 
 Sistema de gestión de inventario con soporte para múltiples bodegas, control de retiros mediante código de barras y trazabilidad completa.
 
+## 🗄️ Base de Datos
+
+Este proyecto utiliza **Supabase** como base de datos. Supabase proporciona:
+- PostgreSQL con extensiones avanzadas
+- Autenticación integrada
+- API REST automática
+- Interfaz de administración web
+- Escalabilidad automática
+
 ## 🌟 Características
 
 - ✅ Gestión multi-bodega
@@ -16,17 +25,35 @@ Sistema de gestión de inventario con soporte para múltiples bodegas, control d
 
 - **Backend**: FastAPI + SQLAlchemy
 - **Frontend**: Streamlit/Flet
-- **Base de datos**: PostgreSQL
+- **Base de datos**: Supabase (PostgreSQL)
 - **Autenticación**: JWT
 - **Contenedores**: Docker
 
 ## 📋 Requisitos
 
 - Python 3.9+
-- PostgreSQL 13+
+- Cuenta de Supabase
 - Docker (opcional)
 
 ## 🚀 Instalación
+
+### 1. Configurar Supabase
+
+1. Crear cuenta en [Supabase](https://supabase.com)
+2. Crear nuevo proyecto
+3. Ir a Settings > API para obtener:
+   - Project URL
+   - Anon key
+   - Service role key
+4. Ejecutar las migraciones SQL en el editor SQL de Supabase:
+   - `supabase/migrations/create_users_table.sql`
+   - `supabase/migrations/create_warehouses_table.sql`
+   - `supabase/migrations/create_items_table.sql`
+   - `supabase/migrations/create_withdrawals_table.sql`
+   - `supabase/migrations/create_history_table.sql`
+   - `supabase/migrations/insert_initial_data.sql`
+
+### 2. Configurar Proyecto Local
 
 1. Clonar el repositorio:
 \`\`\`bash
@@ -50,13 +77,26 @@ pip install -r requirements.txt
 4. Configurar variables de entorno:
 \`\`\`bash
 cp .env.example .env
-# Editar .env con tus configuraciones
+# Editar .env con tus configuraciones de Supabase
 \`\`\`
 
-5. Inicializar base de datos:
+Ejemplo de `.env`:
 \`\`\`bash
-python scripts/init_db.py
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_ANON_KEY=tu-anon-key
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+DATABASE_URL=postgresql://postgres:tu-password@db.tu-proyecto.supabase.co:5432/postgres
+SECRET_KEY=tu-secret-key-super-seguro
 \`\`\`
+
+## 👥 Usuarios Predeterminados
+
+El sistema viene con usuarios predeterminados (contraseña para todos: `admin123`):
+
+- **Admin_Santiago** - Administrador del sistema
+- **Operador_Juan** - Operador de bodega
+- **Operador_Maria** - Operador de bodega  
+- **Supervisor_Carlos** - Supervisor de bodega
 
 ## 🎮 Uso
 
@@ -71,6 +111,16 @@ uvicorn main:app --reload
 cd frontend
 streamlit run app.py
 \`\`\`
+
+## 🏗️ Estructura de Base de Datos
+
+### Tablas Principales:
+- **users**: Gestión de usuarios y autenticación
+- **warehouses**: Información de bodegas
+- **items**: Inventario de productos
+- **withdrawals**: Registros de retiros
+- **withdrawal_items**: Detalle de items retirados
+- **history**: Historial completo de movimientos
 
 ## 📚 Documentación
 

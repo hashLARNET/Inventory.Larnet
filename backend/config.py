@@ -2,8 +2,13 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
+    # Supabase
+    supabase_url: str = ""
+    supabase_anon_key: str = ""
+    supabase_service_role_key: str = ""
+    
     # Database
-    database_url: str = "postgresql://inventory_user:inventory_pass@localhost:5432/inventory_db"
+    database_url: str = ""
     
     # JWT
     secret_key: str = "your-secret-key-change-in-production"
