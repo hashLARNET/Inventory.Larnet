@@ -3,14 +3,14 @@ from typing import List, Optional
 from datetime import datetime
 
 class WithdrawalItemBase(BaseModel):
-    item_id: int
+    item_id: str
     quantity: int
 
 class WithdrawalItemCreate(WithdrawalItemBase):
     pass
 
 class WithdrawalItem(WithdrawalItemBase):
-    id: int
+    id: str
     item_name: str
     
     class Config:
@@ -19,15 +19,15 @@ class WithdrawalItem(WithdrawalItemBase):
 class WithdrawalBase(BaseModel):
     obra: str
     notes: Optional[str] = None
-    warehouse_id: int
+    warehouse_id: str
 
 class WithdrawalCreate(WithdrawalBase):
     items: List[WithdrawalItemCreate]
 
 class Withdrawal(WithdrawalBase):
-    id: int
+    id: str
     withdrawal_date: datetime
-    user_id: int
+    user_id: str
     items: List[WithdrawalItem]
     
     class Config:

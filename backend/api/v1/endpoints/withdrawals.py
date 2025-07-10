@@ -20,7 +20,7 @@ def create_withdrawal(
 
 @router.get("/warehouse/{warehouse_id}", response_model=List[Withdrawal])
 def get_withdrawals_by_warehouse(
-    warehouse_id: int,
+    warehouse_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

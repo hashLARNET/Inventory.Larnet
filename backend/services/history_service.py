@@ -39,12 +39,12 @@ class HistoryService:
         self.db.refresh(history_record)
         return history_record
     
-    def get_history_by_warehouse(self, warehouse_id: int) -> List[History]:
+    def get_history_by_warehouse(self, warehouse_id: str) -> List[History]:
         return self.db.query(History).filter(
             History.warehouse_id == warehouse_id
         ).order_by(History.action_date.desc()).all()
     
-    def get_history_by_item(self, item_id: int) -> List[History]:
+    def get_history_by_item(self, item_id: str) -> List[History]:
         return self.db.query(History).filter(
             History.item_id == item_id
         ).order_by(History.action_date.desc()).all()

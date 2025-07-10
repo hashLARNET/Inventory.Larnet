@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 from .base import BaseModel
 
@@ -17,9 +18,9 @@ class History(BaseModel):
     notes = Column(Text)
     
     # Foreign Keys
-    item_id = Column(Integer, ForeignKey("items.id"))
-    user_id = Column(Integer, ForeignKey("users.id"))
-    warehouse_id = Column(Integer, ForeignKey("warehouses.id"))
+    item_id = Column(UUID(as_uuid=True), ForeignKey("items.id"))
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"))
     
     # Relationships
     item = relationship("Item")

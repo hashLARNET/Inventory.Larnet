@@ -11,7 +11,7 @@ class ItemBase(BaseModel):
     unit_price: Optional[Decimal] = None
     obra: str
     n_factura: str
-    warehouse_id: int
+    warehouse_id: str
 
 class ItemCreate(ItemBase):
     pass
@@ -25,7 +25,7 @@ class ItemUpdate(BaseModel):
     n_factura: Optional[str] = None
 
 class Item(ItemBase):
-    id: int
+    id: str
     created_at: datetime
     
     class Config:

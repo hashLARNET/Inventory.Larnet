@@ -13,7 +13,7 @@ class WarehouseCreate(WarehouseBase):
     pass
 
 class Warehouse(WarehouseBase):
-    id: int
+    id: str
     created_at: datetime
     
     class Config:

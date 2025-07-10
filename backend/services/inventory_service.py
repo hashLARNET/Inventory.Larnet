@@ -4,6 +4,7 @@ from backend.models.item import Item
 from backend.models.warehouse import Warehouse
 from backend.schemas.item import ItemCreate, ItemUpdate
 from backend.core.exceptions import ItemNotFoundException, WarehouseNotFoundException
+import uuid
 
 class InventoryService:
     def __init__(self, db: Session):
@@ -41,10 +42,10 @@ class InventoryService:
             raise ItemNotFoundException(barcode=barcode)
         return item
     
-    def get_items_by_warehouse(self, warehouse_id: int) -> List[Item]:
+    def get_items_by_warehouse(self, warehouse_id: str) -> List[Item]:
         return self.db.query(Item).filter(Item.warehouse_id == warehouse_id).all()
     
-    def search_items(self, query: str, warehouse_id: Optional[int] = None) -> List[Item]:
+    def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Item]:
         search_query = self.db.query(Item).filter(
             (Item.name.ilike(f"%{query}%")) |
             (Item.n_factura.ilike(f"%{query}%")) |
@@ -56,7 +57,7 @@ class InventoryService:
         
         return search_query.all()
     
-    def update_item_stock(self, item_id: int, new_stock: int) -> Item:
+    def update_item_stock(self, item_id: str, new_stock: int) -> Item:
         item = self.db.query(Item).filter(Item.id == item_id).first()
         if not item:
             raise ItemNotFoundException(item_id)
@@ -66,7 +67,7 @@ class InventoryService:
         self.db.refresh(item)
         return item
     
-    def get_items_by_obra(self, obra: str, warehouse_id: int) -> List[Item]:
+    def get_items_by_obra(self, obra: str, warehouse_id: str) -> List[Item]:
         return self.db.query(Item).filter(
             Item.obra == obra,
             Item.warehouse_id == warehouse_id

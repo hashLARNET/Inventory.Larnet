@@ -34,7 +34,7 @@ def create_warehouse(
 
 @router.get("/{warehouse_id}", response_model=Warehouse)
 def get_warehouse(
-    warehouse_id: int,
+    warehouse_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

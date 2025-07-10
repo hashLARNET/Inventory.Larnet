@@ -16,7 +16,7 @@ class UserLogin(BaseModel):
     password: str
 
 class User(UserBase):
-    id: int
+    id: str
     created_at: datetime
     
     class Config:

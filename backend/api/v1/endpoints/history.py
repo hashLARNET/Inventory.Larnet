@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from backend.database.session import get_db
@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/warehouse/{warehouse_id}", response_model=List[History])
 def get_history_by_warehouse(
-    warehouse_id: int,
+    warehouse_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -20,7 +20,7 @@ def get_history_by_warehouse(
 
 @router.get("/item/{item_id}", response_model=List[History])
 def get_history_by_item(
-    item_id: int,
+    item_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

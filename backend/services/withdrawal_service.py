@@ -18,7 +18,7 @@ class WithdrawalService:
         self.db = db
         self.history_service = HistoryService(db)
     
-    def create_withdrawal(self, withdrawal_data: WithdrawalCreate, user_id: int) -> Withdrawal:
+    def create_withdrawal(self, withdrawal_data: WithdrawalCreate, user_id: str) -> Withdrawal:
         # Verify warehouse exists
         warehouse = self.db.query(Warehouse).filter(Warehouse.id == withdrawal_data.warehouse_id).first()
         if not warehouse:
@@ -76,9 +76,9 @@ class WithdrawalService:
         self.db.refresh(db_withdrawal)
         return db_withdrawal
     
-    def get_withdrawals_by_warehouse(self, warehouse_id: int) -> List[Withdrawal]:
+    def get_withdrawals_by_warehouse(self, warehouse_id: str) -> List[Withdrawal]:
         return self.db.query(Withdrawal).filter(Withdrawal.warehouse_id == warehouse_id).all()
     
-    def can_withdraw_from_warehouse(self, user_warehouse_id: int, target_warehouse_id: int) -> bool:
+    def can_withdraw_from_warehouse(self, user_warehouse_id: str, target_warehouse_id: str) -> bool:
         """US5: Only allow withdrawals from physical location"""
         return user_warehouse_id == target_warehouse_id

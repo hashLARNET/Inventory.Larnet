@@ -21,7 +21,7 @@ class HomePage(ft.UserControl):
             label="Seleccionar Bodega",
             hint_text="Elija la bodega donde se encuentra",
             options=[
-                ft.dropdown.Option(str(w["id"]), w["name"]) 
+                ft.dropdown.Option(w["id"], w["name"]) 
                 for w in self.warehouses
             ],
             on_change=self._on_warehouse_change,
@@ -147,7 +147,7 @@ class HomePage(ft.UserControl):
     
     def _on_warehouse_change(self, e):
         if self.warehouse_dropdown.value:
-            warehouse_id = int(self.warehouse_dropdown.value)
+            warehouse_id = self.warehouse_dropdown.value
             selected_warehouse = next(
                 (w for w in self.warehouses if w["id"] == warehouse_id), 
                 None

@@ -32,7 +32,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
-    def get_items_by_warehouse(self, warehouse_id: int) -> List[Dict[str, Any]]:
+    def get_items_by_warehouse(self, warehouse_id: str) -> List[Dict[str, Any]]:
         response = requests.get(
             f"{self.base_url}/api/v1/inventory/items/warehouse/{warehouse_id}",
             headers=self.headers
@@ -48,7 +48,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
-    def search_items(self, query: str, warehouse_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
         params = {"q": query}
         if warehouse_id:
             params["warehouse_id"] = warehouse_id
@@ -70,7 +70,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
-    def get_history_by_warehouse(self, warehouse_id: int) -> List[Dict[str, Any]]:
+    def get_history_by_warehouse(self, warehouse_id: str) -> List[Dict[str, Any]]:
         response = requests.get(
             f"{self.base_url}/api/v1/history/warehouse/{warehouse_id}",
             headers=self.headers
@@ -87,7 +87,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
-    def get_items_by_obra(self, obra: str, warehouse_id: int) -> List[Dict[str, Any]]:
+    def get_items_by_obra(self, obra: str, warehouse_id: str) -> List[Dict[str, Any]]:
         response = requests.get(
             f"{self.base_url}/api/v1/inventory/items/obra/{obra}/warehouse/{warehouse_id}",
             headers=self.headers

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Text, Numeric
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from .base import BaseModel
 
 class Item(BaseModel):
@@ -14,7 +15,7 @@ class Item(BaseModel):
     n_factura = Column(String(50), nullable=False)
     
     # Foreign Keys
-    warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
     
     # Relationships
     warehouse = relationship("Warehouse", back_populates="items")

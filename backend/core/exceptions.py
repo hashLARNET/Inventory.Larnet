@@ -5,7 +5,7 @@ class InventoryException(HTTPException):
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 class ItemNotFoundException(HTTPException):
-    def __init__(self, item_id: int = None, barcode: str = None):
+    def __init__(self, item_id: str = None, barcode: str = None):
         if item_id:
             detail = f"Item with ID {item_id} not found"
         elif barcode:
@@ -20,7 +20,7 @@ class InsufficientStockException(HTTPException):
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 class WarehouseNotFoundException(HTTPException):
-    def __init__(self, warehouse_id: int):
+    def __init__(self, warehouse_id: str):
         detail = f"Warehouse with ID {warehouse_id} not found"
         super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 

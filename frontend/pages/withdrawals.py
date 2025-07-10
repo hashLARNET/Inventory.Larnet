@@ -228,7 +228,7 @@ class WithdrawalsPage(ft.UserControl):
         self.confirm_button.disabled = len(self.withdrawal_items) == 0
         self.update()
     
-    def _remove_from_withdrawal(self, item_id: int):
+    def _remove_from_withdrawal(self, item_id: str):
         self.withdrawal_items = [wi for wi in self.withdrawal_items if wi["item"]["id"] != item_id]
         self._update_withdrawal_list()
     

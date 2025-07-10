@@ -29,7 +29,7 @@ def get_item_by_barcode(
 
 @router.get("/items/warehouse/{warehouse_id}", response_model=List[Item])
 def get_items_by_warehouse(
-    warehouse_id: int,
+    warehouse_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -39,7 +39,7 @@ def get_items_by_warehouse(
 @router.get("/items/search", response_model=List[Item])
 def search_items(
     q: str = Query(..., description="Search query"),
-    warehouse_id: Optional[int] = Query(None, description="Filter by warehouse"),
+    warehouse_id: Optional[str] = Query(None, description="Filter by warehouse"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -49,7 +49,7 @@ def search_items(
 @router.get("/items/obra/{obra}/warehouse/{warehouse_id}", response_model=List[Item])
 def get_items_by_obra(
     obra: str,
-    warehouse_id: int,
+    warehouse_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
