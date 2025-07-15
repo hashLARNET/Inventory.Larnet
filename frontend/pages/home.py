@@ -77,7 +77,7 @@ class HomePage(ft.UserControl):
                 ft.Container(
                     content=ft.Row([
                         ft.Text(
-                            f"Bienvenido, {session_state.current_user.get('full_name', 'Usuario')}",
+                            f"Bienvenido, {session_state.current_user.get('full_name', 'Usuario') if isinstance(session_state.current_user, dict) else 'Usuario'}",
                             size=20,
                             weight=ft.FontWeight.BOLD
                         ),
