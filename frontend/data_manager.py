@@ -8,13 +8,13 @@ class DataManager:
         self.current_user = None
         self.current_warehouse = None
     
-    def verify_login(self, username: str, password: str) -> bool:
+    def verify_login(self, username: str, password: str) -> Optional[Dict[str, Any]]:
         """Verify login credentials"""
         user = self.api_client.login(username, password)
         if user:
             self.current_user = user
-            return True
-        return False
+            return user
+        return None
     
     def get_current_user(self) -> Optional[Dict[str, Any]]:
         """Get current logged user"""
@@ -32,17 +32,13 @@ class DataManager:
         """Get all warehouses"""
         return self.api_client.get_warehouses()
     
-    def get_items(self) -> List[Dict[str, Any]]:
-        """Get items from current warehouse"""
-        if not self.current_warehouse:
-            return []
-        return self.api_client.get_items_by_warehouse(str(self.current_warehouse["id"]))
+    def get_items_by_warehouse(self, warehouse_id: str) -> List[Dict[str, Any]]:
+        """Get items from specific warehouse"""
+        return self.api_client.get_items_by_warehouse(warehouse_id)
     
-    def search_items(self, query: str) -> List[Dict[str, Any]]:
-        """Search items in current warehouse"""
-        if not self.current_warehouse:
-            return []
-        return self.api_client.search_items(query, str(self.current_warehouse["id"]))
+    def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Search items in warehouse"""
+        return self.api_client.search_items(query, warehouse_id)
     
     def get_item_by_barcode(self, barcode: str) -> Optional[Dict[str, Any]]:
         """Get item by barcode"""
@@ -50,10 +46,6 @@ class DataManager:
     
     def add_item(self, item_data: Dict[str, Any]) -> bool:
         """Add new item"""
-        if not self.current_warehouse:
-            return False
-        
-        item_data["warehouse_id"] = str(self.current_warehouse["id"])
         result = self.api_client.create_item(item_data)
         return result is not None
     
