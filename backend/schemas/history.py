@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import uuid
 
 class HistoryBase(BaseModel):
     action_type: str
@@ -13,7 +14,7 @@ class HistoryBase(BaseModel):
     notes: Optional[str] = None
 
 class History(HistoryBase):
-    id: int
+    id: uuid.UUID
     action_date: datetime
     
     class Config:

@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
+import uuid
 
 class ItemBase(BaseModel):
     name: str
@@ -11,7 +12,7 @@ class ItemBase(BaseModel):
     unit_price: Optional[Decimal] = None
     obra: str
     n_factura: str
-    warehouse_id: str
+    warehouse_id: uuid.UUID
 
 class ItemCreate(ItemBase):
     pass
@@ -25,7 +26,7 @@ class ItemUpdate(BaseModel):
     n_factura: Optional[str] = None
 
 class Item(ItemBase):
-    id: str
+    id: uuid.UUID
     created_at: datetime
     
     class Config:

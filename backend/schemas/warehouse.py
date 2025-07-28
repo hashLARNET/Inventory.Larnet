@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import uuid
 
 class WarehouseBase(BaseModel):
     name: str
@@ -13,7 +14,7 @@ class WarehouseCreate(WarehouseBase):
     pass
 
 class Warehouse(WarehouseBase):
-    id: str
+    id: uuid.UUID
     created_at: datetime
     
     class Config:

@@ -40,9 +40,9 @@ def create_initial_data():
         
         # Create regular users
         users_data = [
-            ("Operador_Juan", "juan123", "Juan Pérez"),
-            ("Operador_Maria", "maria123", "María González"),
-            ("Supervisor_Carlos", "carlos123", "Carlos Rodríguez")
+            ("Operador_Juan", "admin123", "Juan Pérez"),
+            ("Operador_Maria", "admin123", "María González"),
+            ("Supervisor_Carlos", "admin123", "Carlos Rodríguez")
         ]
         
         for username, password, full_name in users_data:

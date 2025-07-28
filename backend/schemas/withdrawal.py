@@ -1,16 +1,17 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+import uuid
 
 class WithdrawalItemBase(BaseModel):
-    item_id: str
+    item_id: uuid.UUID
     quantity: int
 
 class WithdrawalItemCreate(WithdrawalItemBase):
     pass
 
 class WithdrawalItem(WithdrawalItemBase):
-    id: str
+    id: uuid.UUID
     item_name: str
     
     class Config:
@@ -19,15 +20,15 @@ class WithdrawalItem(WithdrawalItemBase):
 class WithdrawalBase(BaseModel):
     obra: str
     notes: Optional[str] = None
-    warehouse_id: str
+    warehouse_id: uuid.UUID
 
 class WithdrawalCreate(WithdrawalBase):
     items: List[WithdrawalItemCreate]
 
 class Withdrawal(WithdrawalBase):
-    id: str
+    id: uuid.UUID
     withdrawal_date: datetime
-    user_id: str
+    user_id: uuid.UUID
     items: List[WithdrawalItem]
     
     class Config:

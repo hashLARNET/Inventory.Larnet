@@ -24,7 +24,7 @@ Este proyecto utiliza **Supabase** como base de datos. Supabase proporciona:
 ## 🛠️ Tecnologías
 
 - **Backend**: FastAPI + SQLAlchemy
-- **Frontend**: Streamlit/Flet
+- **Frontend**: Tkinter
 - **Base de datos**: Supabase (PostgreSQL)
 - **Autenticación**: JWT
 - **Contenedores**: Docker
@@ -56,38 +56,40 @@ Este proyecto utiliza **Supabase** como base de datos. Supabase proporciona:
 ### 2. Configurar Proyecto Local
 
 1. Clonar el repositorio:
-\`\`\`bash
+```bash
 git clone https://github.com/tu-usuario/inventario-system.git
 cd inventario-system
-\`\`\`
+```
 
 2. Crear entorno virtual:
-\`\`\`bash
+```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # o
 venv\Scripts\activate  # Windows
-\`\`\`
+```
 
 3. Instalar dependencias:
-\`\`\`bash
+```bash
 pip install -r requirements.txt
-\`\`\`
+```
 
 4. Configurar variables de entorno:
-\`\`\`bash
+```bash
 cp .env.example .env
 # Editar .env con tus configuraciones de Supabase
-\`\`\`
+```
 
 Ejemplo de `.env`:
-\`\`\`bash
+```bash
 SUPABASE_URL=https://tu-proyecto.supabase.co
 SUPABASE_ANON_KEY=tu-anon-key
 SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 DATABASE_URL=postgresql://postgres:tu-password@db.tu-proyecto.supabase.co:5432/postgres
 SECRET_KEY=tu-secret-key-super-seguro
-\`\`\`
+```
+
+**NOTA IMPORTANTE**: Si tu contraseña de base de datos contiene caracteres especiales como `#`, el sistema los codificará automáticamente.
 
 ## 👥 Usuarios Predeterminados
 
@@ -101,16 +103,20 @@ El sistema viene con usuarios predeterminados (contraseña para todos: `admin123
 ## 🎮 Uso
 
 ### Backend
-\`\`\`bash
+```bash
 cd backend
 uvicorn main:app --reload
-\`\`\`
+```
+
+O desde el directorio raíz:
+```bash
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
 
 ### Frontend
-\`\`\`bash
-cd frontend
-streamlit run app.py
-\`\`\`
+```bash
+python frontend/app.py
+```
 
 ## 🏗️ Estructura de Base de Datos
 
