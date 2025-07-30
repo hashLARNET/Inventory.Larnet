@@ -10,8 +10,8 @@ from datetime import datetime
 import json
 import os
 from typing import Dict, List, Optional, Any
-from frontend.barcode_scanner import BarcodeScanner
 from frontend.data_manager import DataManager
+
 # Configuración de colores y estilos
 class Config:
     # Colores principales
@@ -22,6 +22,8 @@ class Config:
     ERROR_COLOR = "#F44336"
     BACKGROUND_COLOR = "#F5F5F5"
     WHITE = "#FFFFFF"
+    TEXT_COLOR = "#212121"
+    ACCENT_COLOR = "#FF5722"
     
     # Tamaños para interfaz táctil
     BUTTON_HEIGHT = 3
@@ -29,10 +31,86 @@ class Config:
     FONT_SIZE_LARGE = 18
     FONT_SIZE_MEDIUM = 14
     FONT_SIZE_SMALL = 12
+    FONT_SIZE_TITLE = 24
+    FONT_FAMILY = "Arial"
     
     # Configuración de la aplicación
     APP_TITLE = "Sistema de Inventario Multi-Bodega"
     APP_VERSION = "1.0.0"
+
+# Clase para manejar el estado de sesión
+class SessionState:
+    def __init__(self):
+        self.current_user = None
+        self.current_warehouse = None
+        self.is_authenticated = False
+    
+    def login(self, user):
+        self.current_user = user
+        self.is_authenticated = True
+    
+    def logout(self):
+        self.current_user = None
+        self.current_warehouse = None
+        self.is_authenticated = False
+    
+    def set_warehouse(self, warehouse):
+        self.current_warehouse = warehouse
+        self.app.data_manager.set_current_warehouse(warehouse)
+
+# Componente de escaneo de código de barras
+class BarcodeScanner(ttk.Frame):
+    def __init__(self, parent, on_scan=None, placeholder="Escanear código de barras"):
+        super().__init__(parent)
+        self.on_scan = on_scan
+        
+        # Frame principal
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Label
+        label = ttk.Label(main_frame, text=placeholder, font=('Arial', Config.FONT_SIZE_MEDIUM))
+        label.pack(anchor=tk.W)
+        
+        # Frame para entrada y botón
+        input_frame = ttk.Frame(main_frame)
+        input_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        # Campo de entrada
+        self.barcode_var = tk.StringVar()
+        self.entry = ttk.Entry(
+            input_frame,
+            textvariable=self.barcode_var,
+            font=('Arial', Config.FONT_SIZE_LARGE)
+        )
+        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.entry.bind('<Return>', self._on_submit)
+        
+        # Botón de escaneo
+        self.scan_button = ttk.Button(
+            input_frame,
+            text="📷 Escanear",
+            command=self._on_scan_click,
+            width=15
+        )
+        self.scan_button.pack(side=tk.RIGHT, padx=(10, 0))
+    
+    def _on_submit(self, event):
+        if self.barcode_var.get() and self.on_scan:
+            self.on_scan(self.barcode_var.get().strip())
+            self.clear()
+    
+    def _on_scan_click(self):
+        if self.barcode_var.get() and self.on_scan:
+            self.on_scan(self.barcode_var.get().strip())
+            self.clear()
+    
+    def clear(self):
+        self.barcode_var.set("")
+        self.entry.focus()
+    
+    def focus(self):
+        self.entry.focus()
 
 # Página de Login
 class LoginPage(ttk.Frame):
@@ -313,6 +391,7 @@ class HomePage(ttk.Frame):
         if selected_index >= 0:
             selected_warehouse = self.warehouses[selected_index]
             self.app.session_state.set_warehouse(selected_warehouse)
+            self.app.data_manager.set_current_warehouse(selected_warehouse)
             
             # Habilitar botones
             self.inventory_button.config(state=tk.NORMAL)
@@ -329,232 +408,7 @@ class HomePage(ttk.Frame):
     def logout(self):
         if messagebox.askyesno("Cerrar Sesión", "¿Está seguro que desea cerrar sesión?"):
             self.app.session_state.logout()
-            self.app.show_login_page()
-
-
-# Configuración de colores y estilos
-class Config:
-    # Colores principales
-    PRIMARY_COLOR = "#1976D2"
-    SECONDARY_COLOR = "#424242"
-    SUCCESS_COLOR = "#4CAF50"
-    WARNING_COLOR = "#FF9800"
-    ERROR_COLOR = "#F44336"
-    BACKGROUND_COLOR = "#F5F5F5"
-    WHITE = "#FFFFFF"
-    
-    # Tamaños para interfaz táctil
-    BUTTON_HEIGHT = 3
-    BUTTON_WIDTH = 20
-    FONT_SIZE_LARGE = 18
-    FONT_SIZE_MEDIUM = 14
-    FONT_SIZE_SMALL = 12
-    
-    # Configuración de la aplicación
-    APP_TITLE = "Sistema de Inventario Multi-Bodega"
-    APP_VERSION = "1.0.0"
-
-# Clase para manejar el estado de sesión
-class SessionState:
-    def __init__(self):
-        self.current_user = None
-        self.current_warehouse = None
-        self.is_authenticated = False
-    
-    def login(self, user):
-        self.current_user = user
-        self.is_authenticated = True
-    
-    def logout(self):
-        self.current_user = None
-        self.current_warehouse = None
-        self.is_authenticated = False
-    
-    def set_warehouse(self, warehouse):
-        self.current_warehouse = warehouse
-
-# Componente de escaneo de código de barras
-class BarcodeScanner(ttk.Frame):
-    def __init__(self, parent, on_scan=None, placeholder="Escanear código de barras"):
-        super().__init__(parent)
-        self.on_scan = on_scan
-        
-        # Frame principal
-        main_frame = ttk.Frame(self)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        # Label
-        label = ttk.Label(main_frame, text=placeholder, font=('Arial', Config.FONT_SIZE_MEDIUM))
-        label.pack(anchor=tk.W)
-        
-        # Frame para entrada y botón
-        input_frame = ttk.Frame(main_frame)
-        input_frame.pack(fill=tk.X, pady=(5, 0))
-        
-        # Campo de entrada
-        self.barcode_var = tk.StringVar()
-        self.entry = ttk.Entry(
-            input_frame,
-            textvariable=self.barcode_var,
-            font=('Arial', Config.FONT_SIZE_LARGE)
-        )
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        
-        # Página Principal
-class HomePage(ttk.Frame):
-    def __init__(self, parent, app):
-        super().__init__(parent)
-        self.app = app
-        self.pack(fill=tk.BOTH, expand=True)
-        
-        # Header
-        header_frame = ttk.Frame(self, style='Header.TFrame')
-        header_frame.pack(fill=tk.X, padx=20, pady=10)
-        
-        # Información del usuario
-        user_info = ttk.Label(
-            header_frame,
-            text=f"Bienvenido, {self.app.session_state.current_user['full_name']}",
-            font=('Arial', Config.FONT_SIZE_LARGE, 'bold'),
-            style='Header.TLabel'
-        )
-        user_info.pack(side=tk.LEFT)
-        
-        # Botón de cerrar sesión
-        logout_button = ttk.Button(
-            header_frame,
-            text="Cerrar Sesión",
-            command=self.logout,
-            style='Danger.TButton'
-        )
-        logout_button.pack(side=tk.RIGHT)
-        
-        # Frame principal
-        main_frame = ttk.Frame(self)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
-        # Sección de selección de bodega
-        warehouse_frame = ttk.LabelFrame(
-            main_frame,
-            text="Selección de Bodega",
-            padding=20
-        )
-        warehouse_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        ttk.Label(
-            warehouse_frame,
-            text="Seleccione la bodega donde se encuentra:",
-            font=('Arial', Config.FONT_SIZE_MEDIUM)
-        ).pack(anchor=tk.W, pady=(0, 10))
-        
-        self.warehouse_var = tk.StringVar()
-        self.warehouse_combo = ttk.Combobox(
-            warehouse_frame,
-            textvariable=self.warehouse_var,
-            font=('Arial', Config.FONT_SIZE_MEDIUM),
-            state='readonly',
-            width=40
-        )
-        self.warehouse_combo.pack(fill=tk.X)
-        self.warehouse_combo.bind('<<ComboboxSelected>>', self.on_warehouse_selected)
-        
-        # Cargar bodegas
-        self.load_warehouses()
-        
-        # Frame de opciones (inicialmente deshabilitado)
-        self.options_frame = ttk.LabelFrame(
-            main_frame,
-            text="Opciones Disponibles",
-            padding=20
-        )
-        self.options_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Crear botones de opciones
-        buttons_frame = ttk.Frame(self.options_frame)
-        buttons_frame.pack(expand=True)
-        
-        # Botón de Inventario
-        self.inventory_button = ttk.Button(
-            buttons_frame,
-            text="📦 Inventario",
-            command=lambda: self.app.show_inventory_page(),
-            style='Primary.TButton',
-            width=20,
-            state=tk.DISABLED
-        )
-        self.inventory_button.grid(row=0, column=0, padx=10, pady=10)
-        
-        # Botón de Retiros
-        self.withdrawals_button = ttk.Button(
-            buttons_frame,
-            text="📤 Retiros",
-            command=lambda: self.app.show_withdrawals_page(),
-            style='Success.TButton',
-            width=20,
-            state=tk.DISABLED
-        )
-        self.withdrawals_button.grid(row=0, column=1, padx=10, pady=10)
-        
-        # Botón de Historial
-        self.history_button = ttk.Button(
-            buttons_frame,
-            text="📊 Historial",
-            command=lambda: self.app.show_history_page(),
-            style='Info.TButton',
-            width=20,
-            state=tk.DISABLED
-        )
-        self.history_button.grid(row=0, column=2, padx=10, pady=10)
-        
-        # Descripciones
-        ttk.Label(
-            buttons_frame,
-            text="Consultar stock\ny gestionar items",
-            font=('Arial', Config.FONT_SIZE_SMALL),
-            justify=tk.CENTER
-        ).grid(row=1, column=0, padx=10, pady=(0, 10))
-        
-        ttk.Label(
-            buttons_frame,
-            text="Realizar retiros\ncon código de barras",
-            font=('Arial', Config.FONT_SIZE_SMALL),
-            justify=tk.CENTER
-        ).grid(row=1, column=1, padx=10, pady=(0, 10))
-        
-        ttk.Label(
-            buttons_frame,
-            text="Ver movimientos\ny transacciones",
-            font=('Arial', Config.FONT_SIZE_SMALL),
-            justify=tk.CENTER
-        ).grid(row=1, column=2, padx=10, pady=(0, 10))
-    
-    def load_warehouses(self):
-        warehouses = self.app.data_manager.get_warehouses()
-        warehouse_names = [f"{w['name']} - {w['code']}" for w in warehouses]
-        self.warehouse_combo['values'] = warehouse_names
-        self.warehouses = warehouses
-    
-    def on_warehouse_selected(self, event):
-        selected_index = self.warehouse_combo.current()
-        if selected_index >= 0:
-            selected_warehouse = self.warehouses[selected_index]
-            self.app.session_state.set_warehouse(selected_warehouse)
-            
-            # Habilitar botones
-            self.inventory_button.config(state=tk.NORMAL)
-            self.withdrawals_button.config(state=tk.NORMAL)
-            self.history_button.config(state=tk.NORMAL)
-            
-            # Mostrar mensaje de confirmación
-            messagebox.showinfo(
-                "Bodega Seleccionada",
-                f"Ha seleccionado: {selected_warehouse['name']}\n"
-                f"Ubicación: {selected_warehouse['location']}"
-            )
-    
-    def logout(self):
-        if messagebox.askyesno("Cerrar Sesión", "¿Está seguro que desea cerrar sesión?"):
-            self.app.session_state.logout()
+            self.app.data_manager.logout()
             self.app.show_login_page()
 
 # Página de Inventario
@@ -607,16 +461,6 @@ class InventoryPage(ttk.Frame):
             style='Success.TButton'
         )
         new_material_button.pack(side=tk.RIGHT)
-        
-        # Botón agregar item (mantener compatibilidad)
-        add_button = ttk.Button(
-            header_frame,
-            text="➕ Agregar Item",
-            command=self.show_add_item_dialog,
-            style='Success.TButton',
-            state='disabled'  # Oculto, usar "Nuevo Material"
-        )
-        # add_button.pack(side=tk.RIGHT)  # Comentado para ocultarlo
         
         # Frame principal
         main_frame = ttk.Frame(self)
@@ -835,7 +679,7 @@ class InventoryPage(ttk.Frame):
         item = self.app.data_manager.get_item_by_barcode(barcode)
         if item:
             # Verificar que pertenece a la bodega actual
-            if item['warehouse_id'] == self.app.session_state.current_warehouse['id']:
+            if str(item['warehouse_id']) == str(self.app.session_state.current_warehouse['id']):
                 self.show_quantity_dialog_for_stock(item, dialog)
             else:
                 messagebox.showerror("Error", "El item no pertenece a esta bodega")
@@ -850,7 +694,7 @@ class InventoryPage(ttk.Frame):
                 self.stock_tree.delete(item)
             return
         
-        warehouse_id = self.app.session_state.current_warehouse['id']
+        warehouse_id = str(self.app.session_state.current_warehouse['id'])
         items = self.app.data_manager.search_items(query, warehouse_id)
         
         # Limpiar y llenar lista
@@ -882,7 +726,7 @@ class InventoryPage(ttk.Frame):
             return
         
         # Buscar item completo
-        warehouse_id = self.app.session_state.current_warehouse['id']
+        warehouse_id = str(self.app.session_state.current_warehouse['id'])
         items = self.app.data_manager.get_items_by_warehouse(warehouse_id)
         selected_item = next((item for item in items if str(item['id']) == item_id), None)
         
@@ -917,13 +761,13 @@ class InventoryPage(ttk.Frame):
             text=f"Stock actual: {item['stock']}",
             font=('Arial', Config.FONT_SIZE_MEDIUM)
         ).pack(pady=5)
-        
+
         ttk.Label(
             main_frame,
-            text=f"Código: {item['barcode']}",
+            text=f"Codigo: {item['barcode']}",
             font=('Arial', Config.FONT_SIZE_MEDIUM)
         ).pack(pady=5)
-        
+                
         # Campo de cantidad
         quantity_frame = ttk.Frame(main_frame)
         quantity_frame.pack(pady=20)
@@ -1500,77 +1344,62 @@ class HistoryPage(ttk.Frame):
         self.app = app
         self.pack(fill=tk.BOTH, expand=True)
         
-        self.create_widgets()
-        self.load_history()
-    
-    def create_widgets(self):
-        """Crear widgets de la página"""
-        # Frame principal
-        main_frame = tk.Frame(self, bg=Config.BACKGROUND_COLOR)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
         # Header
-        header_frame = tk.Frame(main_frame, bg=Config.BACKGROUND_COLOR)
-        header_frame.pack(fill=tk.X, pady=(0, 20))
+        header_frame = ttk.Frame(self, style='Header.TFrame')
+        header_frame.pack(fill=tk.X, padx=20, pady=10)
         
-        # Botón volver
-        back_btn = tk.Button(
+        # Botón de volver
+        back_button = ttk.Button(
             header_frame,
             text="← Volver",
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 2, "bold"),
-            bg=Config.SECONDARY_COLOR,
-            fg="white",
-            command=self.app.show_home_page,
-            cursor="hand2"
+            command=lambda: self.app.show_home_page(),
+            style='Secondary.TButton'
         )
-        back_btn.pack(side=tk.LEFT)
+        back_button.pack(side=tk.LEFT)
         
         # Título
-        title_label = tk.Label(
+        title_label = ttk.Label(
             header_frame,
-            text="Historial de Movimientos",
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_TITLE + 2, "bold"),
-            fg=Config.TEXT_COLOR,
-            bg=Config.BACKGROUND_COLOR
+            text=f"Historial - {self.app.session_state.current_warehouse['name']}",
+            font=('Arial', Config.FONT_SIZE_LARGE, 'bold'),
+            style='Header.TLabel'
         )
-        title_label.pack(side=tk.LEFT, padx=(20, 0))
-        
-        # Información de bodega
-        if self.app.data_manager.get_current_warehouse():
-            warehouse = self.app.data_manager.get_current_warehouse()
-            warehouse_label = tk.Label(
-                header_frame,
-                text=f"Bodega: {warehouse['name']}",
-                font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
-                fg=Config.ACCENT_COLOR,
-                bg=Config.BACKGROUND_COLOR
-            )
-            warehouse_label.pack(side=tk.RIGHT)
+        title_label.pack(side=tk.LEFT, padx=20)
         
         # Botón actualizar
-        refresh_btn = tk.Button(
-            main_frame,
+        refresh_button = ttk.Button(
+            header_frame,
             text="🔄 Actualizar",
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
-            bg=Config.PRIMARY_COLOR,
-            fg="white",
             command=self.load_history,
-            cursor="hand2"
+            style='Primary.TButton'
         )
-        refresh_btn.pack(anchor=tk.E, pady=(0, 10))
+        refresh_button.pack(side=tk.RIGHT)
+        
+        # Frame principal
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
         
         # Tabla de historial
-        tree_frame = tk.Frame(main_frame)
+        tree_frame = ttk.Frame(main_frame)
         tree_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(tree_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Treeview
         self.tree = ttk.Treeview(
             tree_frame,
             columns=('fecha', 'accion', 'item', 'cantidad', 'obra', 'usuario'),
-            show='headings'
+            show='headings',
+            yscrollcommand=scrollbar.set,
+            height=20
         )
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.tree.yview)
         
         # Configurar columnas
-        self.tree.heading('fecha', text='Fecha')
+        self.tree.heading('fecha', text='Fecha y Hora')
         self.tree.heading('accion', text='Acción')
         self.tree.heading('item', text='Item')
         self.tree.heading('cantidad', text='Cantidad')
@@ -1584,12 +1413,8 @@ class HistoryPage(ttk.Frame):
         self.tree.column('obra', width=150)
         self.tree.column('usuario', width=150)
         
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # Cargar historial
+        self.load_history()
     
     def load_history(self):
         """Cargar historial de movimientos"""
@@ -1620,6 +1445,13 @@ class HistoryPage(ttk.Frame):
             }
             action_text = action_translations.get(record['action_type'], record['action_type'])
             
+            # Color según tipo de acción
+            tags = []
+            if record['action_type'] == 'withdrawal':
+                tags.append('withdrawal')
+            elif record['action_type'] == 'addition':
+                tags.append('addition')
+            
             self.tree.insert('', 'end', values=(
                 formatted_date,
                 action_text,
@@ -1627,7 +1459,11 @@ class HistoryPage(ttk.Frame):
                 record['quantity'],
                 record['obra'],
                 record['user_name']
-            ))
+            ), tags=tags)
+        
+        # Configurar colores
+        self.tree.tag_configure('withdrawal', foreground='red')
+        self.tree.tag_configure('addition', foreground='green')
 
 # Aplicación Principal
 class InventoryApp:
@@ -1644,6 +1480,7 @@ class InventoryApp:
         
         # Inicializar componentes
         self.session_state = SessionState()
+        self.session_state.app = self  # Agregar referencia a la app
         self.data_manager = DataManager()
         
         # Frame principal
@@ -1789,3 +1626,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
