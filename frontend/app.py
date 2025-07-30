@@ -128,32 +128,6 @@ class LoginPage(ttk.Frame):
             width=30
         )
         login_button.grid(row=3, column=0, columnspan=2, pady=20)
-        
-        # Información de usuarios de prueba
-        info_frame = ttk.Frame(center_frame, style='Card.TFrame')
-        info_frame.pack(pady=(0, 20))
-        
-        ttk.Label(
-            info_frame,
-            text="Usuarios de prueba:",
-            font=('Arial', Config.FONT_SIZE_SMALL, 'italic'),
-            style='Card.TLabel'
-        ).pack()
-        
-        users_info = [
-            "Admin_Santiago (pass: admin123)",
-            "Operador_Juan (pass: admin123)",
-            "Operador_Maria (pass: admin123)",
-            "Supervisor_Carlos (pass: admin123)"
-        ]
-        
-        for info in users_info:
-            ttk.Label(
-                info_frame,
-                text=info,
-                font=('Arial', Config.FONT_SIZE_SMALL),
-                style='Card.TLabel'
-            ).pack()
     
     def login(self):
         username = self.username_var.get()
@@ -307,20 +281,12 @@ class HomePage(ttk.Frame):
         warehouse_names = [f"{w['name']} - {w['code']}" for w in warehouses]
         self.warehouse_combo['values'] = warehouse_names
         self.warehouses = warehouses
-        
-        # Restaurar bodega seleccionada si existe
-        if hasattr(self.app, 'selected_warehouse') and self.app.selected_warehouse:
-            for i, warehouse in enumerate(warehouses):
-                if warehouse['id'] == self.app.selected_warehouse['id']:
-                    self.warehouse_combo.current(i)
-                    break
     
     def on_warehouse_selected(self, event):
         selected_index = self.warehouse_combo.current()
         if selected_index >= 0:
             selected_warehouse = self.warehouses[selected_index]
             self.app.session_state.set_warehouse(selected_warehouse)
-            self.app.selected_warehouse = selected_warehouse
             
             # Habilitar botones
             self.inventory_button.config(state=tk.NORMAL)
@@ -883,7 +849,7 @@ class InventoryPage(ttk.Frame):
             main_frame,
             text="Agregar Stock a Item Existente",
             font=('Arial', Config.FONT_SIZE_LARGE, 'bold')
-        ).pack(pady=(0, 20))
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_TITLE, "bold"),
         
         # Buscar item
         search_frame = ttk.LabelFrame(main_frame, text="Buscar Item", padding=10)
@@ -892,19 +858,19 @@ class InventoryPage(ttk.Frame):
         # Scanner de código de barras
         self.stock_scanner = BarcodeScanner(
             search_frame,
-            on_scan=lambda barcode: self.search_item_for_stock(barcode, dialog),
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
             placeholder="Escanear código de barras del item"
         )
         self.stock_scanner.pack(fill=tk.X, pady=(0, 10))
         
         # O buscar por nombre
-        ttk.Label(search_frame, text="O buscar por nombre:", font=('Arial', Config.FONT_SIZE_MEDIUM)).pack(anchor=tk.W)
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_SMALL + 1, "bold"),
         
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, font=('Arial', Config.FONT_SIZE_MEDIUM), width=40)
         search_entry.pack(fill=tk.X, pady=(5, 10))
         search_entry.bind('<KeyRelease>', lambda e: self.search_items_for_stock(search_var.get(), dialog))
-        
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1)
         # Lista de items encontrados
         list_frame = ttk.LabelFrame(main_frame, text="Items Encontrados", padding=10)
         list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
@@ -1057,7 +1023,7 @@ class InventoryPage(ttk.Frame):
         ).pack(side=tk.LEFT, padx=(0, 10))
         
         quantity_var = tk.StringVar(value="1")
-        quantity_spinbox = ttk.Spinbox(
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
             quantity_frame,
             from_=1,
             to=9999,
@@ -1066,7 +1032,7 @@ class InventoryPage(ttk.Frame):
             width=10
         )
         quantity_spinbox.pack(side=tk.LEFT)
-        
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1),
         # Mensaje de error
         error_label = ttk.Label(main_frame, text="", foreground='red')
         error_label.pack(pady=10)
@@ -1098,7 +1064,7 @@ class InventoryPage(ttk.Frame):
             except Exception as e:
                 error_label.config(text=f"Error: {str(e)}")
         
-        ttk.Button(
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
             button_frame,
             text="Cancelar",
             command=dialog.destroy,
@@ -1471,7 +1437,7 @@ class WithdrawalsPage(ttk.Frame):
         quantity_var = tk.StringVar(value="1")
         quantity_spinbox = ttk.Spinbox(
             quantity_frame,
-            from_=1,
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
             to=item['stock'],
             textvariable=quantity_var,
             font=('Arial', Config.FONT_SIZE_MEDIUM),
@@ -1853,7 +1819,6 @@ class InventoryApp:
         # Inicializar componentes
         self.session_state = SessionState()
         self.data_manager = DataManager()
-        self.selected_warehouse = None
         
         # Frame principal
         self.main_frame = ttk.Frame(self.root)
@@ -1997,4 +1962,4 @@ def main():
     root.mainloop()
 
 if __name__ == "__main__":
-    main()
+    main() 
