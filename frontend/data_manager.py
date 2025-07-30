@@ -55,6 +55,7 @@ class DataManager:
     def add_item_stock(self, item_id: str, quantity: int) -> bool:
         """Add stock to existing item"""
         try:
+            import requests
             headers = {"Authorization": f"Bearer {self.api_client.token}"}
             response = requests.post(
                 f"{self.api_client.base_url}/inventory/items/{item_id}/add_stock",
