@@ -1933,7 +1933,7 @@ class InventoryApp:
     
     def show_home_page(self):
         self.clear_frame()
-        self.current_page = HomePage(self.main_frame, self)
+        self.current_page = HomePage(self.main_frame, self, self.selected_warehouse)
     
     def show_inventory_page(self):
         self.clear_frame()
