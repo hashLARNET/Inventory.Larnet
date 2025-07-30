@@ -128,6 +128,32 @@ class LoginPage(ttk.Frame):
             width=30
         )
         login_button.grid(row=3, column=0, columnspan=2, pady=20)
+        
+        # Información de usuarios de prueba
+        info_frame = ttk.Frame(center_frame, style='Card.TFrame')
+        info_frame.pack(pady=(0, 20))
+        
+        ttk.Label(
+            info_frame,
+            text="Usuarios de prueba:",
+            font=('Arial', Config.FONT_SIZE_SMALL, 'italic'),
+            style='Card.TLabel'
+        ).pack()
+        
+        users_info = [
+            "Admin_Santiago (pass: admin123)",
+            "Operador_Juan (pass: admin123)",
+            "Operador_Maria (pass: admin123)",
+            "Supervisor_Carlos (pass: admin123)"
+        ]
+        
+        for info in users_info:
+            ttk.Label(
+                info_frame,
+                text=info,
+                font=('Arial', Config.FONT_SIZE_SMALL),
+                style='Card.TLabel'
+            ).pack()
     
     def login(self):
         username = self.username_var.get()
@@ -374,121 +400,7 @@ class BarcodeScanner(ttk.Frame):
         )
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
-        title_label = ttk.Label(
-            title_frame,
-            text=Config.APP_TITLE,
-            font=('Arial', Config.FONT_SIZE_LARGE, 'bold'),
-            style='Card.TLabel'
-        )
-        title_label.pack(pady=(10, 0))
-        
-        # Frame de login
-        login_frame = ttk.Frame(center_frame, style='Card.TFrame')
-        login_frame.pack(padx=40, pady=20)
-        
-        # Usuario
-        ttk.Label(
-            login_frame,
-            text="Usuario:",
-            font=('Arial', Config.FONT_SIZE_MEDIUM),
-            style='Card.TLabel'
-        ).grid(row=0, column=0, sticky=tk.W, pady=10)
-        
-        self.username_var = tk.StringVar()
-        self.username_entry = ttk.Entry(
-            login_frame,
-            textvariable=self.username_var,
-            font=('Arial', Config.FONT_SIZE_MEDIUM),
-            width=25
-        )
-        self.username_entry.grid(row=0, column=1, padx=(10, 0), pady=10)
-        self.username_entry.focus()
-        
-        # Contraseña
-        ttk.Label(
-            login_frame,
-            text="Contraseña:",
-            font=('Arial', Config.FONT_SIZE_MEDIUM),
-            style='Card.TLabel'
-        ).grid(row=1, column=0, sticky=tk.W, pady=10)
-        
-        self.password_var = tk.StringVar()
-        self.password_entry = ttk.Entry(
-            login_frame,
-            textvariable=self.password_var,
-            show="*",
-            font=('Arial', Config.FONT_SIZE_MEDIUM),
-            width=25
-        )
-        self.password_entry.grid(row=1, column=1, padx=(10, 0), pady=10)
-        self.password_entry.bind('<Return>', lambda e: self.login())
-        
-        # Mensaje de error
-        self.error_label = ttk.Label(
-            login_frame,
-            text="",
-            font=('Arial', Config.FONT_SIZE_SMALL),
-            foreground='red',
-            style='Card.TLabel'
-        )
-        self.error_label.grid(row=2, column=0, columnspan=2, pady=10)
-        
-        # Botón de login
-        login_button = ttk.Button(
-            login_frame,
-            text="Iniciar Sesión",
-            command=self.login,
-            style='Primary.TButton',
-            width=30
-        )
-        login_button.grid(row=3, column=0, columnspan=2, pady=20)
-        
-        # Información de usuarios de prueba
-        info_frame = ttk.Frame(center_frame, style='Card.TFrame')
-        info_frame.pack(pady=(0, 20))
-        
-        ttk.Label(
-            info_frame,
-            text="Usuarios de prueba:",
-            font=('Arial', Config.FONT_SIZE_SMALL, 'italic'),
-            style='Card.TLabel'
-        ).pack()
-        
-        users_info = [
-            "Admin_Santiago (pass: admin123)",
-            "Operador_Juan (pass: admin123)",
-            "Operador_Maria (pass: admin123)",
-            "Supervisor_Carlos (pass: admin123)"
-        ]
-        
-        for info in users_info:
-            ttk.Label(
-                info_frame,
-                text=info,
-                font=('Arial', Config.FONT_SIZE_SMALL),
-                style='Card.TLabel'
-            ).pack()
-    
-    def login(self):
-        username = self.username_var.get()
-        password = self.password_var.get()
-        
-        if not username or not password:
-            self.show_error("Por favor ingrese usuario y contraseña")
-            return
-        
-        user = self.app.data_manager.verify_login(username, password)
-        if user:
-            self.app.session_state.login(user)
-            self.app.show_home_page()
-        else:
-            self.show_error("Usuario o contraseña incorrectos")
-    
-    def show_error(self, message):
-        self.error_label.config(text=message)
-        self.after(3000, lambda: self.error_label.config(text=""))
-
-# Página Principal
+        # Página Principal
 class HomePage(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)
@@ -849,7 +761,7 @@ class InventoryPage(ttk.Frame):
             main_frame,
             text="Agregar Stock a Item Existente",
             font=('Arial', Config.FONT_SIZE_LARGE, 'bold')
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_TITLE, "bold"),
+        ).pack(pady=(0, 20))
         
         # Buscar item
         search_frame = ttk.LabelFrame(main_frame, text="Buscar Item", padding=10)
@@ -858,19 +770,19 @@ class InventoryPage(ttk.Frame):
         # Scanner de código de barras
         self.stock_scanner = BarcodeScanner(
             search_frame,
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
+            on_scan=lambda barcode: self.search_item_for_stock(barcode, dialog),
             placeholder="Escanear código de barras del item"
         )
         self.stock_scanner.pack(fill=tk.X, pady=(0, 10))
         
         # O buscar por nombre
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_SMALL + 1, "bold"),
+        ttk.Label(search_frame, text="O buscar por nombre:", font=('Arial', Config.FONT_SIZE_MEDIUM)).pack(anchor=tk.W)
         
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, font=('Arial', Config.FONT_SIZE_MEDIUM), width=40)
         search_entry.pack(fill=tk.X, pady=(5, 10))
         search_entry.bind('<KeyRelease>', lambda e: self.search_items_for_stock(search_var.get(), dialog))
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1)
+        
         # Lista de items encontrados
         list_frame = ttk.LabelFrame(main_frame, text="Items Encontrados", padding=10)
         list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
@@ -1023,7 +935,7 @@ class InventoryPage(ttk.Frame):
         ).pack(side=tk.LEFT, padx=(0, 10))
         
         quantity_var = tk.StringVar(value="1")
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
+        quantity_spinbox = ttk.Spinbox(
             quantity_frame,
             from_=1,
             to=9999,
@@ -1032,7 +944,7 @@ class InventoryPage(ttk.Frame):
             width=10
         )
         quantity_spinbox.pack(side=tk.LEFT)
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1),
+        
         # Mensaje de error
         error_label = ttk.Label(main_frame, text="", foreground='red')
         error_label.pack(pady=10)
@@ -1064,7 +976,7 @@ class InventoryPage(ttk.Frame):
             except Exception as e:
                 error_label.config(text=f"Error: {str(e)}")
         
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
+        ttk.Button(
             button_frame,
             text="Cancelar",
             command=dialog.destroy,
@@ -1437,7 +1349,7 @@ class WithdrawalsPage(ttk.Frame):
         quantity_var = tk.StringVar(value="1")
         quantity_spinbox = ttk.Spinbox(
             quantity_frame,
-            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
+            from_=1,
             to=item['stock'],
             textvariable=quantity_var,
             font=('Arial', Config.FONT_SIZE_MEDIUM),
@@ -1588,220 +1500,134 @@ class HistoryPage(ttk.Frame):
         self.app = app
         self.pack(fill=tk.BOTH, expand=True)
         
-        # Header
-        header_frame = ttk.Frame(self, style='Header.TFrame')
-        header_frame.pack(fill=tk.X, padx=20, pady=10)
-        
-        # Botón de volver
-        back_button = ttk.Button(
-            header_frame,
-            text="← Volver",
-            command=lambda: self.app.show_home_page(),
-            style='Secondary.TButton'
-        )
-        back_button.pack(side=tk.LEFT)
-        
-        # Título
-        title_label = ttk.Label(
-            header_frame,
-            text=f"Historial - {self.app.session_state.current_warehouse['name']}",
-            font=('Arial', Config.FONT_SIZE_LARGE, 'bold'),
-            style='Header.TLabel'
-        )
-        title_label.pack(side=tk.LEFT, padx=20)
-        
-        # Botón actualizar
-        refresh_button = ttk.Button(
-            header_frame,
-            text="🔄 Actualizar",
-            command=self.load_history,
-            style='Primary.TButton'
-        )
-        refresh_button.pack(side=tk.RIGHT)
-        
-        # Frame principal
-        main_frame = ttk.Frame(self)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
-        # Frame de filtros
-        filter_frame = ttk.LabelFrame(main_frame, text="Filtros", padding=10)
-        filter_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # Filtro por tipo de acción
-        ttk.Label(
-            filter_frame,
-            text="Tipo de acción:",
-            font=('Arial', Config.FONT_SIZE_MEDIUM)
-        ).grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
-        
-        self.action_var = tk.StringVar(value="Todos")
-        action_combo = ttk.Combobox(
-            filter_frame,
-            textvariable=self.action_var,
-            values=["Todos", "withdrawal", "addition", "adjustment"],
-            state='readonly',
-            width=20
-        )
-        action_combo.grid(row=0, column=1, padx=(0, 20))
-        action_combo.bind('<<ComboboxSelected>>', lambda e: self.load_history())
-        
-        # Filtro por obra
-        ttk.Label(
-            filter_frame,
-            text="Obra:",
-            font=('Arial', Config.FONT_SIZE_MEDIUM)
-        ).grid(row=0, column=2, sticky=tk.W, padx=(0, 10))
-        
-        self.obra_filter_var = tk.StringVar()
-        self.obra_filter_entry = ttk.Entry(
-            filter_frame,
-            textvariable=self.obra_filter_var,
-            font=('Arial', Config.FONT_SIZE_MEDIUM),
-            width=30
-        )
-        self.obra_filter_entry.grid(row=0, column=3)
-        self.obra_filter_entry.bind('<KeyRelease>', lambda e: self.load_history())
-        
-        # Frame para la lista de historial
-        list_frame = ttk.LabelFrame(
-            main_frame,
-            text="Movimientos Registrados",
-            padding=10
-        )
-        list_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(list_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        # Treeview para mostrar historial
-        self.tree = ttk.Treeview(
-            list_frame,
-            columns=('fecha', 'hora', 'tipo', 'cantidad', 'obra', 'factura', 'usuario'),
-            show='tree headings',
-            yscrollcommand=scrollbar.set,
-            height=15
-        )
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=self.tree.yview)
-        
-        # Configurar columnas
-        self.tree.heading('#0', text='Item')
-        self.tree.heading('fecha', text='Fecha')
-        self.tree.heading('hora', text='Hora')
-        self.tree.heading('tipo', text='Tipo')
-        self.tree.heading('cantidad', text='Cantidad')
-        self.tree.heading('obra', text='Obra')
-        self.tree.heading('factura', text='Factura')
-        self.tree.heading('usuario', text='Usuario')
-        
-        self.tree.column('#0', width=180)
-        self.tree.column('fecha', width=100)
-        self.tree.column('hora', width=80)
-        self.tree.column('tipo', width=100)
-        self.tree.column('cantidad', width=80)
-        self.tree.column('obra', width=150)
-        self.tree.column('factura', width=100)
-        self.tree.column('usuario', width=150)
-        
-        # Frame de estadísticas
-        stats_frame = ttk.Frame(main_frame)
-        stats_frame.pack(fill=tk.X, pady=(10, 0))
-        
-        self.stats_label = ttk.Label(
-            stats_frame,
-            text="",
-            font=('Arial', Config.FONT_SIZE_MEDIUM)
-        )
-        self.stats_label.pack()
-        
-        # Cargar historial
+        self.create_widgets()
         self.load_history()
     
+    def create_widgets(self):
+        """Crear widgets de la página"""
+        # Frame principal
+        main_frame = tk.Frame(self, bg=Config.BACKGROUND_COLOR)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Header
+        header_frame = tk.Frame(main_frame, bg=Config.BACKGROUND_COLOR)
+        header_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        # Botón volver
+        back_btn = tk.Button(
+            header_frame,
+            text="← Volver",
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 2, "bold"),
+            bg=Config.SECONDARY_COLOR,
+            fg="white",
+            command=self.app.show_home_page,
+            cursor="hand2"
+        )
+        back_btn.pack(side=tk.LEFT)
+        
+        # Título
+        title_label = tk.Label(
+            header_frame,
+            text="Historial de Movimientos",
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_TITLE + 2, "bold"),
+            fg=Config.TEXT_COLOR,
+            bg=Config.BACKGROUND_COLOR
+        )
+        title_label.pack(side=tk.LEFT, padx=(20, 0))
+        
+        # Información de bodega
+        if self.app.data_manager.get_current_warehouse():
+            warehouse = self.app.data_manager.get_current_warehouse()
+            warehouse_label = tk.Label(
+                header_frame,
+                text=f"Bodega: {warehouse['name']}",
+                font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
+                fg=Config.ACCENT_COLOR,
+                bg=Config.BACKGROUND_COLOR
+            )
+            warehouse_label.pack(side=tk.RIGHT)
+        
+        # Botón actualizar
+        refresh_btn = tk.Button(
+            main_frame,
+            text="🔄 Actualizar",
+            font=(Config.FONT_FAMILY, Config.FONT_SIZE_MEDIUM + 1, "bold"),
+            bg=Config.PRIMARY_COLOR,
+            fg="white",
+            command=self.load_history,
+            cursor="hand2"
+        )
+        refresh_btn.pack(anchor=tk.E, pady=(0, 10))
+        
+        # Tabla de historial
+        tree_frame = tk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.tree = ttk.Treeview(
+            tree_frame,
+            columns=('fecha', 'accion', 'item', 'cantidad', 'obra', 'usuario'),
+            show='headings'
+        )
+        
+        # Configurar columnas
+        self.tree.heading('fecha', text='Fecha')
+        self.tree.heading('accion', text='Acción')
+        self.tree.heading('item', text='Item')
+        self.tree.heading('cantidad', text='Cantidad')
+        self.tree.heading('obra', text='Obra')
+        self.tree.heading('usuario', text='Usuario')
+        
+        self.tree.column('fecha', width=150)
+        self.tree.column('accion', width=100)
+        self.tree.column('item', width=200)
+        self.tree.column('cantidad', width=100)
+        self.tree.column('obra', width=150)
+        self.tree.column('usuario', width=150)
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    
     def load_history(self):
-        # Limpiar árbol
+        """Cargar historial de movimientos"""
+        # Limpiar tabla
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        # Obtener historial
+        # Cargar datos
         history = self.app.data_manager.get_history()
         
-        # Aplicar filtros
-        action_filter = self.action_var.get()
-        obra_filter = self.obra_filter_var.get().lower()
-        
-        filtered_history = []
         for record in history:
-            # Filtro por tipo de acción
-            if action_filter != "Todos" and record['action_type'] != action_filter:
-                continue
-            
-            # Filtro por obra
-            if obra_filter and obra_filter not in record['obra'].lower():
-                continue
-            
-            filtered_history.append(record)
-        
-        # Ordenar por fecha descendente
-        filtered_history.sort(key=lambda x: x['action_date'], reverse=True)
-        
-        # Estadísticas
-        total_movements = len(filtered_history)
-        withdrawals = sum(1 for r in filtered_history if r['action_type'] == 'withdrawal')
-        total_items_moved = sum(r['quantity'] for r in filtered_history)
-        
-        # Agregar registros al árbol
-        for record in filtered_history:
-            # Parsear fecha y hora
+            # Formatear fecha
             try:
-                action_date = datetime.fromisoformat(record['action_date'].replace('Z', '+00:00'))
-                date_str = action_date.strftime("%d/%m/%Y")
-                time_str = action_date.strftime("%H:%M:%S")
+                from datetime import datetime
+                if isinstance(record['action_date'], str):
+                    date_obj = datetime.fromisoformat(record['action_date'].replace('Z', '+00:00'))
+                    formatted_date = date_obj.strftime('%d/%m/%Y %H:%M')
+                else:
+                    formatted_date = str(record['action_date'])
             except:
-                date_str = record['action_date'][:10]
-                time_str = record['action_date'][11:19]
+                formatted_date = str(record['action_date'])
             
-            # Determinar color según tipo
-            tags = []
-            if record['action_type'] == 'withdrawal':
-                tags.append('withdrawal')
-            elif record['action_type'] == 'addition':
-                tags.append('addition')
-            
-            # Tipo en español
-            action_types = {
+            # Traducir tipo de acción
+            action_translations = {
                 'withdrawal': 'Retiro',
-                'addition': 'Ingreso',
+                'addition': 'Adición',
                 'adjustment': 'Ajuste'
             }
-            action_type_es = action_types.get(record['action_type'], record['action_type'])
+            action_text = action_translations.get(record['action_type'], record['action_type'])
             
-            self.tree.insert(
-                '',
-                'end',
-                text=record['item_name'],
-                values=(
-                    date_str,
-                    time_str,
-                    action_type_es,
-                    record['quantity'],
-                    record['obra'],
-                    record['n_factura'],
-                    record['user_name']
-                ),
-                tags=tags
-            )
-        
-        # Configurar tags
-        self.tree.tag_configure('withdrawal', foreground='red')
-        self.tree.tag_configure('addition', foreground='green')
-        
-        # Actualizar estadísticas
-        self.stats_label.config(
-            text=f"Total movimientos: {total_movements} | "
-            f"Retiros: {withdrawals} | "
-            f"Items movidos: {total_items_moved}"
-        )
+            self.tree.insert('', 'end', values=(
+                formatted_date,
+                action_text,
+                record['item_name'],
+                record['quantity'],
+                record['obra'],
+                record['user_name']
+            ))
 
 # Aplicación Principal
 class InventoryApp:
@@ -1962,4 +1788,4 @@ def main():
     root.mainloop()
 
 if __name__ == "__main__":
-    main() 
+    main()
