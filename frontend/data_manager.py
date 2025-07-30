@@ -46,8 +46,26 @@ class DataManager:
     
     def add_item(self, item_data: Dict[str, Any]) -> bool:
         """Add new item"""
+        # Remove unit_price if it exists
+        if 'unit_price' in item_data:
+            del item_data['unit_price']
         result = self.api_client.create_item(item_data)
         return result is not None
+    
+    def add_item_stock(self, item_id: str, quantity: int) -> bool:
+        """Add stock to existing item"""
+        try:
+            headers = {"Authorization": f"Bearer {self.api_client.token}"}
+            response = requests.post(
+                f"{self.api_client.base_url}/inventory/items/{item_id}/add_stock",
+                headers=headers,
+                json={"quantity": quantity},
+                timeout=10
+            )
+            return response.status_code == 200
+        except Exception as e:
+            print(f"Error agregando stock: {e}")
+            return False
     
     def process_withdrawal(self, items: List[Dict[str, Any]], obra: str, notes: str = "") -> bool:
         """Process withdrawal"""

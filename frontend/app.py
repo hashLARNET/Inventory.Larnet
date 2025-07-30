@@ -10,6 +10,7 @@ from datetime import datetime
 import json
 import os
 from typing import Dict, List, Optional, Any
+from frontend.barcode_scanner import BarcodeScanner
 from frontend.data_manager import DataManager
 
 # Configuración de colores y estilos
@@ -79,59 +80,6 @@ class BarcodeScanner(ttk.Frame):
             font=('Arial', Config.FONT_SIZE_LARGE)
         )
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.entry.bind('<Return>', self._on_submit)
-        
-        # Botón de escaneo
-        self.scan_button = ttk.Button(
-            input_frame,
-            text="📷 Escanear",
-            command=self._on_scan_click,
-            width=15
-        )
-        self.scan_button.pack(side=tk.RIGHT, padx=(10, 0))
-    
-    def _on_submit(self, event):
-        if self.barcode_var.get() and self.on_scan:
-            self.on_scan(self.barcode_var.get().strip())
-            self.clear()
-    
-    def _on_scan_click(self):
-        if self.barcode_var.get() and self.on_scan:
-            self.on_scan(self.barcode_var.get().strip())
-            self.clear()
-    
-    def clear(self):
-        self.barcode_var.set("")
-        self.entry.focus()
-    
-    def focus(self):
-        self.entry.focus()
-
-# Página de Login
-class LoginPage(ttk.Frame):
-    def __init__(self, parent, app):
-        super().__init__(parent)
-        self.app = app
-        self.pack(fill=tk.BOTH, expand=True)
-        
-        # Configurar estilo
-        self.configure(style='Background.TFrame')
-        
-        # Frame central
-        center_frame = ttk.Frame(self, style='Card.TFrame')
-        center_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-        
-        # Título
-        title_frame = ttk.Frame(center_frame, style='Card.TFrame')
-        title_frame.pack(pady=20)
-        
-        icon_label = ttk.Label(
-            title_frame,
-            text="🏭",
-            font=('Arial', 48),
-            style='Card.TLabel'
-        )
-        icon_label.pack()
         
         title_label = ttk.Label(
             title_frame,
@@ -433,14 +381,37 @@ class InventoryPage(ttk.Frame):
         )
         title_label.pack(side=tk.LEFT, padx=20)
         
-        # Botón agregar item
+        # Botones de acción
+        buttons_frame = ttk.Frame(header_frame)
+        buttons_frame.pack(side=tk.RIGHT)
+        
+        # Botón agregar stock
+        add_stock_button = ttk.Button(
+            buttons_frame,
+            text="➕ Agregar Stock",
+            command=self.show_add_stock_dialog,
+            style='Primary.TButton'
+        )
+        add_stock_button.pack(side=tk.RIGHT, padx=(0, 10))
+        
+        # Botón nuevo material
+        new_material_button = ttk.Button(
+            buttons_frame,
+            text="✨ Nuevo Material",
+            command=self.show_add_item_dialog,
+            style='Success.TButton'
+        )
+        new_material_button.pack(side=tk.RIGHT)
+        
+        # Botón agregar item (mantener compatibilidad)
         add_button = ttk.Button(
             header_frame,
             text="➕ Agregar Item",
             command=self.show_add_item_dialog,
-            style='Success.TButton'
+            style='Success.TButton',
+            state='disabled'  # Oculto, usar "Nuevo Material"
         )
-        add_button.pack(side=tk.RIGHT)
+        # add_button.pack(side=tk.RIGHT)  # Comentado para ocultarlo
         
         # Frame principal
         main_frame = ttk.Frame(self)
@@ -481,7 +452,7 @@ class InventoryPage(ttk.Frame):
         # Treeview para mostrar items
         self.tree = ttk.Treeview(
             list_frame,
-            columns=('barcode', 'stock', 'obra', 'factura', 'precio'),
+            columns=('barcode', 'stock', 'obra', 'factura'),
             show='tree headings',
             yscrollcommand=scrollbar.set,
             height=15
@@ -495,14 +466,12 @@ class InventoryPage(ttk.Frame):
         self.tree.heading('stock', text='Stock')
         self.tree.heading('obra', text='Obra')
         self.tree.heading('factura', text='Factura')
-        self.tree.heading('precio', text='Precio')
         
         self.tree.column('#0', width=200)
         self.tree.column('barcode', width=120)
         self.tree.column('stock', width=80)
         self.tree.column('obra', width=150)
         self.tree.column('factura', width=100)
-        self.tree.column('precio', width=80)
         
         # Frame de información
         info_frame = ttk.Frame(main_frame)
@@ -548,8 +517,7 @@ class InventoryPage(ttk.Frame):
                     item['barcode'],
                     item['stock'],
                     item['obra'],
-                    item['n_factura'],
-                    f"${item['unit_price']:.2f}" if item['unit_price'] else "$0.00"
+                    item['n_factura']
                 ),
                 tags=tags
             )
@@ -572,9 +540,257 @@ class InventoryPage(ttk.Frame):
         warehouse_name = self.app.session_state.current_warehouse['name']
         self.info_label.config(text=f"Total de items en {warehouse_name}: {total_items}")
     
+    def show_add_stock_dialog(self):
+        dialog = tk.Toplevel(self)
+        dialog.title("Agregar Stock")
+        dialog.geometry("600x400")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Frame principal
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Título
+        ttk.Label(
+            main_frame,
+            text="Agregar Stock a Item Existente",
+            font=('Arial', Config.FONT_SIZE_LARGE, 'bold')
+        ).pack(pady=(0, 20))
+        
+        # Buscar item
+        search_frame = ttk.LabelFrame(main_frame, text="Buscar Item", padding=10)
+        search_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        # Scanner de código de barras
+        self.stock_scanner = BarcodeScanner(
+            search_frame,
+            on_scan=lambda barcode: self.search_item_for_stock(barcode, dialog),
+            placeholder="Escanear código de barras del item"
+        )
+        self.stock_scanner.pack(fill=tk.X, pady=(0, 10))
+        
+        # O buscar por nombre
+        ttk.Label(search_frame, text="O buscar por nombre:", font=('Arial', Config.FONT_SIZE_MEDIUM)).pack(anchor=tk.W)
+        
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var, font=('Arial', Config.FONT_SIZE_MEDIUM), width=40)
+        search_entry.pack(fill=tk.X, pady=(5, 10))
+        search_entry.bind('<KeyRelease>', lambda e: self.search_items_for_stock(search_var.get(), dialog))
+        
+        # Lista de items encontrados
+        list_frame = ttk.LabelFrame(main_frame, text="Items Encontrados", padding=10)
+        list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        
+        # Treeview para items
+        self.stock_tree = ttk.Treeview(
+            list_frame,
+            columns=('barcode', 'stock', 'obra'),
+            show='tree headings',
+            height=8
+        )
+        self.stock_tree.pack(fill=tk.BOTH, expand=True)
+        
+        self.stock_tree.heading('#0', text='Nombre')
+        self.stock_tree.heading('barcode', text='Código')
+        self.stock_tree.heading('stock', text='Stock Actual')
+        self.stock_tree.heading('obra', text='Obra')
+        
+        self.stock_tree.column('#0', width=200)
+        self.stock_tree.column('barcode', width=120)
+        self.stock_tree.column('stock', width=100)
+        self.stock_tree.column('obra', width=150)
+        
+        # Doble click para seleccionar
+        self.stock_tree.bind('<Double-1>', lambda e: self.select_item_for_stock(dialog))
+        
+        # Botones
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X)
+        
+        ttk.Button(
+            button_frame,
+            text="Cancelar",
+            command=dialog.destroy,
+            style='Secondary.TButton'
+        ).pack(side=tk.LEFT)
+        
+        ttk.Button(
+            button_frame,
+            text="Seleccionar Item",
+            command=lambda: self.select_item_for_stock(dialog),
+            style='Primary.TButton'
+        ).pack(side=tk.RIGHT)
+        
+        # Focus en el scanner
+        self.stock_scanner.focus()
+    
+    def search_item_for_stock(self, barcode, dialog):
+        """Buscar item por código de barras para agregar stock"""
+        item = self.app.data_manager.get_item_by_barcode(barcode)
+        if item:
+            # Verificar que pertenece a la bodega actual
+            if item['warehouse_id'] == self.app.session_state.current_warehouse['id']:
+                self.show_quantity_dialog_for_stock(item, dialog)
+            else:
+                messagebox.showerror("Error", "El item no pertenece a esta bodega")
+        else:
+            messagebox.showerror("Error", f"No se encontró item con código: {barcode}")
+    
+    def search_items_for_stock(self, query, dialog):
+        """Buscar items por nombre para agregar stock"""
+        if len(query) < 2:
+            # Limpiar lista
+            for item in self.stock_tree.get_children():
+                self.stock_tree.delete(item)
+            return
+        
+        warehouse_id = self.app.session_state.current_warehouse['id']
+        items = self.app.data_manager.search_items(query, warehouse_id)
+        
+        # Limpiar y llenar lista
+        for item in self.stock_tree.get_children():
+            self.stock_tree.delete(item)
+        
+        for item in items:
+            self.stock_tree.insert(
+                '',
+                'end',
+                text=item['name'],
+                values=(item['barcode'], item['stock'], item['obra']),
+                tags=[str(item['id'])]  # Guardar ID en tags
+            )
+    
+    def select_item_for_stock(self, dialog):
+        """Seleccionar item de la lista para agregar stock"""
+        selected = self.stock_tree.selection()
+        if not selected:
+            messagebox.showwarning("Advertencia", "Seleccione un item de la lista")
+            return
+        
+        # Obtener item seleccionado
+        item_data = self.stock_tree.item(selected[0])
+        item_id = item_data['tags'][0] if item_data['tags'] else None
+        
+        if not item_id:
+            messagebox.showerror("Error", "No se pudo obtener el ID del item")
+            return
+        
+        # Buscar item completo
+        warehouse_id = self.app.session_state.current_warehouse['id']
+        items = self.app.data_manager.get_items_by_warehouse(warehouse_id)
+        selected_item = next((item for item in items if str(item['id']) == item_id), None)
+        
+        if selected_item:
+            self.show_quantity_dialog_for_stock(selected_item, dialog)
+        else:
+            messagebox.showerror("Error", "No se encontró el item seleccionado")
+    
+    def show_quantity_dialog_for_stock(self, item, parent_dialog):
+        """Mostrar diálogo para ingresar cantidad a agregar"""
+        parent_dialog.destroy()  # Cerrar diálogo de búsqueda
+        
+        dialog = tk.Toplevel(self)
+        dialog.title(f"Agregar Stock: {item['name']}")
+        dialog.geometry("400x300")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Frame principal
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Información del item
+        ttk.Label(
+            main_frame,
+            text=f"Item: {item['name']}",
+            font=('Arial', Config.FONT_SIZE_MEDIUM, 'bold')
+        ).pack(pady=5)
+        
+        ttk.Label(
+            main_frame,
+            text=f"Stock actual: {item['stock']}",
+            font=('Arial', Config.FONT_SIZE_MEDIUM)
+        ).pack(pady=5)
+        
+        ttk.Label(
+            main_frame,
+            text=f"Código: {item['barcode']}",
+            font=('Arial', Config.FONT_SIZE_MEDIUM)
+        ).pack(pady=5)
+        
+        # Campo de cantidad
+        quantity_frame = ttk.Frame(main_frame)
+        quantity_frame.pack(pady=20)
+        
+        ttk.Label(
+            quantity_frame,
+            text="Cantidad a agregar:",
+            font=('Arial', Config.FONT_SIZE_MEDIUM)
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        quantity_var = tk.StringVar(value="1")
+        quantity_spinbox = ttk.Spinbox(
+            quantity_frame,
+            from_=1,
+            to=9999,
+            textvariable=quantity_var,
+            font=('Arial', Config.FONT_SIZE_MEDIUM),
+            width=10
+        )
+        quantity_spinbox.pack(side=tk.LEFT)
+        
+        # Mensaje de error
+        error_label = ttk.Label(main_frame, text="", foreground='red')
+        error_label.pack(pady=10)
+        
+        # Botones
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=10)
+        
+        def add_stock():
+            try:
+                quantity = int(quantity_var.get())
+                if quantity <= 0:
+                    error_label.config(text="La cantidad debe ser mayor a 0")
+                    return
+                
+                # Agregar stock
+                success = self.app.data_manager.add_item_stock(str(item['id']), quantity)
+                
+                if success:
+                    # Actualizar lista
+                    self.load_items()
+                    dialog.destroy()
+                    messagebox.showinfo("Éxito", f"Se agregaron {quantity} unidades al stock de '{item['name']}'")
+                else:
+                    error_label.config(text="Error al agregar stock")
+                
+            except ValueError:
+                error_label.config(text="Ingrese una cantidad válida")
+            except Exception as e:
+                error_label.config(text=f"Error: {str(e)}")
+        
+        ttk.Button(
+            button_frame,
+            text="Cancelar",
+            command=dialog.destroy,
+            style='Secondary.TButton'
+        ).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(
+            button_frame,
+            text="Agregar Stock",
+            command=add_stock,
+            style='Primary.TButton'
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # Focus en el spinbox
+        quantity_spinbox.focus()
+    
     def show_add_item_dialog(self):
         dialog = tk.Toplevel(self)
-        dialog.title("Agregar Nuevo Item")
+        dialog.title("Agregar Nuevo Material")
         dialog.geometry("500x600")
         dialog.transient(self)
         dialog.grab_set()
@@ -583,53 +799,51 @@ class InventoryPage(ttk.Frame):
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Título
+        ttk.Label(
+            main_frame,
+            text="Agregar Nuevo Material",
+            font=('Arial', Config.FONT_SIZE_LARGE, 'bold')
+        ).grid(row=0, column=0, columnspan=2, pady=(0, 20))
+        
         # Campos del formulario
         fields = []
         
         # Nombre
         ttk.Label(main_frame, text="Nombre:", font=('Arial', Config.FONT_SIZE_MEDIUM)).grid(
-            row=0, column=0, sticky=tk.W, pady=5
+            row=1, column=0, sticky=tk.W, pady=5
         )
         name_var = tk.StringVar()
         name_entry = ttk.Entry(main_frame, textvariable=name_var, font=('Arial', Config.FONT_SIZE_MEDIUM), width=30)
-        name_entry.grid(row=0, column=1, pady=5, sticky=tk.W)
+        name_entry.grid(row=1, column=1, pady=5, sticky=tk.W)
         fields.append(('name', name_var))
         
         # Descripción
         ttk.Label(main_frame, text="Descripción:", font=('Arial', Config.FONT_SIZE_MEDIUM)).grid(
-            row=1, column=0, sticky=tk.W, pady=5
+            row=2, column=0, sticky=tk.W, pady=5
         )
         desc_var = tk.StringVar()
         desc_entry = ttk.Entry(main_frame, textvariable=desc_var, font=('Arial', Config.FONT_SIZE_MEDIUM), width=30)
-        desc_entry.grid(row=1, column=1, pady=5, sticky=tk.W)
+        desc_entry.grid(row=2, column=1, pady=5, sticky=tk.W)
         fields.append(('description', desc_var))
         
         # Código de barras
         ttk.Label(main_frame, text="Código de barras:", font=('Arial', Config.FONT_SIZE_MEDIUM)).grid(
-            row=2, column=0, sticky=tk.W, pady=5
+            row=3, column=0, sticky=tk.W, pady=5
         )
         barcode_var = tk.StringVar()
         barcode_entry = ttk.Entry(main_frame, textvariable=barcode_var, font=('Arial', Config.FONT_SIZE_MEDIUM), width=30)
-        barcode_entry.grid(row=2, column=1, pady=5, sticky=tk.W)
+        barcode_entry.grid(row=3, column=1, pady=5, sticky=tk.W)
         fields.append(('barcode', barcode_var))
         
         # Stock inicial
         ttk.Label(main_frame, text="Stock inicial:", font=('Arial', Config.FONT_SIZE_MEDIUM)).grid(
-            row=3, column=0, sticky=tk.W, pady=5
+            row=4, column=0, sticky=tk.W, pady=5
         )
         stock_var = tk.StringVar(value="0")
         stock_entry = ttk.Entry(main_frame, textvariable=stock_var, font=('Arial', Config.FONT_SIZE_MEDIUM), width=30)
-        stock_entry.grid(row=3, column=1, pady=5, sticky=tk.W)
+        stock_entry.grid(row=4, column=1, pady=5, sticky=tk.W)
         fields.append(('stock', stock_var))
-        
-        # Precio unitario
-        ttk.Label(main_frame, text="Precio unitario:", font=('Arial', Config.FONT_SIZE_MEDIUM)).grid(
-            row=4, column=0, sticky=tk.W, pady=5
-        )
-        price_var = tk.StringVar()
-        price_entry = ttk.Entry(main_frame, textvariable=price_var, font=('Arial', Config.FONT_SIZE_MEDIUM), width=30)
-        price_entry.grid(row=4, column=1, pady=5, sticky=tk.W)
-        fields.append(('unit_price', price_var))
         
         # Obra
         ttk.Label(main_frame, text="Obra:", font=('Arial', Config.FONT_SIZE_MEDIUM)).grid(
@@ -670,9 +884,8 @@ class InventoryPage(ttk.Frame):
             # Convertir tipos
             try:
                 data['stock'] = int(data.get('stock', 0))
-                data['unit_price'] = float(data.get('unit_price', 0)) if data.get('unit_price') else None
             except ValueError:
-                error_label.config(text="Stock y precio deben ser números válidos")
+                error_label.config(text="Stock debe ser un número válido")
                 return
             
             # Agregar warehouse_id

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from pydantic import BaseModel
 from backend.database.session import get_db
 from backend.schemas.item import Item, ItemCreate, ItemUpdate
 from backend.services.inventory_service import InventoryService
@@ -8,6 +9,9 @@ from backend.api.v1.dependencies import get_current_user
 from backend.models.user import User
 
 router = APIRouter()
+
+class AddStockRequest(BaseModel):
+    quantity: int
 
 @router.post("/items", response_model=Item)
 def create_item(
@@ -17,6 +21,16 @@ def create_item(
 ):
     inventory_service = InventoryService(db)
     return inventory_service.create_item(item)
+
+@router.post("/items/{item_id}/add_stock", response_model=Item)
+def add_stock_to_item(
+    item_id: str,
+    request: AddStockRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    inventory_service = InventoryService(db)
+    return inventory_service.add_item_stock(item_id, request.quantity, current_user)
 
 @router.get("/items/barcode/{barcode}", response_model=Item)
 def get_item_by_barcode(

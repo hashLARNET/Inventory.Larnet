@@ -60,9 +60,9 @@ def create_initial_data():
         
         # Create warehouses
         warehouses_data = [
-            ("Bodega Principal", "BP001", "Bodega principal del almacén", "Edificio A - Piso 1"),
-            ("Bodega Secundaria", "BS002", "Bodega secundaria para overflow", "Edificio B - Piso 2"),
-            ("Bodega Herramientas", "BH003", "Bodega especializada en herramientas", "Edificio A - Piso 2")
+            ("BODEGA LA SERENA", "BP001", "Bodega principal del almacén", "La Serena - Piso -1"),
+            ("BODEGA SANTIAGO", "BS002", "Bodega sucursal santiago", "La Serena - Piso -1"),
+            ("BODEGA GENERAL", "BH003", "Bodega especializada en herramientas", "Edificio A - Piso 2")
         ]
         
         for name, code, description, location in warehouses_data:

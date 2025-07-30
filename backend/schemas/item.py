@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from decimal import Decimal
 import uuid
 
 class ItemBase(BaseModel):
@@ -9,7 +8,6 @@ class ItemBase(BaseModel):
     description: Optional[str] = None
     barcode: str
     stock: int = 0
-    unit_price: Optional[Decimal] = None
     obra: str
     n_factura: str
     warehouse_id: uuid.UUID
@@ -21,7 +19,6 @@ class ItemUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     stock: Optional[int] = None
-    unit_price: Optional[Decimal] = None
     obra: Optional[str] = None
     n_factura: Optional[str] = None
 

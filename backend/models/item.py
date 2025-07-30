@@ -10,7 +10,6 @@ class Item(BaseModel):
     description = Column(Text)
     barcode = Column(String(100), unique=True, nullable=False, index=True)
     stock = Column(Integer, default=0)
-    unit_price = Column(Numeric(10, 2))
     obra = Column(String(100), nullable=False)
     n_factura = Column(String(50), nullable=False)
     
