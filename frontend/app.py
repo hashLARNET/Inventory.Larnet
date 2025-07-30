@@ -176,11 +176,10 @@ class LoginPage(ttk.Frame):
 
 # Página Principal
 class HomePage(ttk.Frame):
-    def __init__(self, parent, app, selected_warehouse=None):
+    def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
         self.pack(fill=tk.BOTH, expand=True)
-        self.selected_warehouse = selected_warehouse
         
         # Header
         header_frame = ttk.Frame(self, style='Header.TFrame')
@@ -308,12 +307,20 @@ class HomePage(ttk.Frame):
         warehouse_names = [f"{w['name']} - {w['code']}" for w in warehouses]
         self.warehouse_combo['values'] = warehouse_names
         self.warehouses = warehouses
+        
+        # Restaurar bodega seleccionada si existe
+        if hasattr(self.app, 'selected_warehouse') and self.app.selected_warehouse:
+            for i, warehouse in enumerate(warehouses):
+                if warehouse['id'] == self.app.selected_warehouse['id']:
+                    self.warehouse_combo.current(i)
+                    break
     
     def on_warehouse_selected(self, event):
         selected_index = self.warehouse_combo.current()
         if selected_index >= 0:
             selected_warehouse = self.warehouses[selected_index]
             self.app.session_state.set_warehouse(selected_warehouse)
+            self.app.selected_warehouse = selected_warehouse
             
             # Habilitar botones
             self.inventory_button.config(state=tk.NORMAL)
@@ -517,11 +524,10 @@ class BarcodeScanner(ttk.Frame):
 
 # Página Principal
 class HomePage(ttk.Frame):
-    def __init__(self, parent, app, selected_warehouse=None):
+    def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
         self.pack(fill=tk.BOTH, expand=True)
-        self.selected_warehouse = selected_warehouse
         
         # Header
         header_frame = ttk.Frame(self, style='Header.TFrame')
@@ -1847,6 +1853,7 @@ class InventoryApp:
         # Inicializar componentes
         self.session_state = SessionState()
         self.data_manager = DataManager()
+        self.selected_warehouse = None
         
         # Frame principal
         self.main_frame = ttk.Frame(self.root)
