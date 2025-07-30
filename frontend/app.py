@@ -12,6 +12,299 @@ import os
 from typing import Dict, List, Optional, Any
 from frontend.barcode_scanner import BarcodeScanner
 from frontend.data_manager import DataManager
+# Configuración de colores y estilos
+class Config:
+    # Colores principales
+    PRIMARY_COLOR = "#1976D2"
+    SECONDARY_COLOR = "#424242"
+    SUCCESS_COLOR = "#4CAF50"
+    WARNING_COLOR = "#FF9800"
+    ERROR_COLOR = "#F44336"
+    BACKGROUND_COLOR = "#F5F5F5"
+    WHITE = "#FFFFFF"
+    
+    # Tamaños para interfaz táctil
+    BUTTON_HEIGHT = 3
+    BUTTON_WIDTH = 20
+    FONT_SIZE_LARGE = 18
+    FONT_SIZE_MEDIUM = 14
+    FONT_SIZE_SMALL = 12
+    
+    # Configuración de la aplicación
+    APP_TITLE = "Sistema de Inventario Multi-Bodega"
+    APP_VERSION = "1.0.0"
+
+# Página de Login
+class LoginPage(ttk.Frame):
+    def __init__(self, parent, app):
+        super().__init__(parent)
+        self.app = app
+        self.pack(fill=tk.BOTH, expand=True)
+        
+        # Configurar estilo
+        self.configure(style='Background.TFrame')
+        
+        # Frame central
+        center_frame = ttk.Frame(self, style='Card.TFrame')
+        center_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        
+        # Título
+        title_frame = ttk.Frame(center_frame, style='Card.TFrame')
+        title_frame.pack(pady=20)
+        
+        icon_label = ttk.Label(
+            title_frame,
+            text="🏭",
+            font=('Arial', 48),
+            style='Card.TLabel'
+        )
+        icon_label.pack()
+        
+        title_label = ttk.Label(
+            title_frame,
+            text=Config.APP_TITLE,
+            font=('Arial', Config.FONT_SIZE_LARGE, 'bold'),
+            style='Card.TLabel'
+        )
+        title_label.pack(pady=(10, 0))
+        
+        # Frame de login
+        login_frame = ttk.Frame(center_frame, style='Card.TFrame')
+        login_frame.pack(padx=40, pady=20)
+        
+        # Usuario
+        ttk.Label(
+            login_frame,
+            text="Usuario:",
+            font=('Arial', Config.FONT_SIZE_MEDIUM),
+            style='Card.TLabel'
+        ).grid(row=0, column=0, sticky=tk.W, pady=10)
+        
+        self.username_var = tk.StringVar()
+        self.username_entry = ttk.Entry(
+            login_frame,
+            textvariable=self.username_var,
+            font=('Arial', Config.FONT_SIZE_MEDIUM),
+            width=25
+        )
+        self.username_entry.grid(row=0, column=1, padx=(10, 0), pady=10)
+        self.username_entry.focus()
+        
+        # Contraseña
+        ttk.Label(
+            login_frame,
+            text="Contraseña:",
+            font=('Arial', Config.FONT_SIZE_MEDIUM),
+            style='Card.TLabel'
+        ).grid(row=1, column=0, sticky=tk.W, pady=10)
+        
+        self.password_var = tk.StringVar()
+        self.password_entry = ttk.Entry(
+            login_frame,
+            textvariable=self.password_var,
+            show="*",
+            font=('Arial', Config.FONT_SIZE_MEDIUM),
+            width=25
+        )
+        self.password_entry.grid(row=1, column=1, padx=(10, 0), pady=10)
+        self.password_entry.bind('<Return>', lambda e: self.login())
+        
+        # Mensaje de error
+        self.error_label = ttk.Label(
+            login_frame,
+            text="",
+            font=('Arial', Config.FONT_SIZE_SMALL),
+            foreground='red',
+            style='Card.TLabel'
+        )
+        self.error_label.grid(row=2, column=0, columnspan=2, pady=10)
+        
+        # Botón de login
+        login_button = ttk.Button(
+            login_frame,
+            text="Iniciar Sesión",
+            command=self.login,
+            style='Primary.TButton',
+            width=30
+        )
+        login_button.grid(row=3, column=0, columnspan=2, pady=20)
+    
+    def login(self):
+        username = self.username_var.get()
+        password = self.password_var.get()
+        
+        if not username or not password:
+            self.show_error("Por favor ingrese usuario y contraseña")
+            return
+        
+        user = self.app.data_manager.verify_login(username, password)
+        if user:
+            self.app.session_state.login(user)
+            self.app.show_home_page()
+        else:
+            self.show_error("Usuario o contraseña incorrectos")
+    
+    def show_error(self, message):
+        self.error_label.config(text=message)
+        self.after(3000, lambda: self.error_label.config(text=""))
+
+# Página Principal
+class HomePage(ttk.Frame):
+    def __init__(self, parent, app):
+        super().__init__(parent)
+        self.app = app
+        self.pack(fill=tk.BOTH, expand=True)
+        
+        # Header
+        header_frame = ttk.Frame(self, style='Header.TFrame')
+        header_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        # Información del usuario
+        user_info = ttk.Label(
+            header_frame,
+            text=f"Bienvenido, {self.app.session_state.current_user['full_name']}",
+            font=('Arial', Config.FONT_SIZE_LARGE, 'bold'),
+            style='Header.TLabel'
+        )
+        user_info.pack(side=tk.LEFT)
+        
+        # Botón de cerrar sesión
+        logout_button = ttk.Button(
+            header_frame,
+            text="Cerrar Sesión",
+            command=self.logout,
+            style='Danger.TButton'
+        )
+        logout_button.pack(side=tk.RIGHT)
+        
+        # Frame principal
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        # Sección de selección de bodega
+        warehouse_frame = ttk.LabelFrame(
+            main_frame,
+            text="Selección de Bodega",
+            padding=20
+        )
+        warehouse_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        ttk.Label(
+            warehouse_frame,
+            text="Seleccione la bodega donde se encuentra:",
+            font=('Arial', Config.FONT_SIZE_MEDIUM)
+        ).pack(anchor=tk.W, pady=(0, 10))
+        
+        self.warehouse_var = tk.StringVar()
+        self.warehouse_combo = ttk.Combobox(
+            warehouse_frame,
+            textvariable=self.warehouse_var,
+            font=('Arial', Config.FONT_SIZE_MEDIUM),
+            state='readonly',
+            width=40
+        )
+        self.warehouse_combo.pack(fill=tk.X)
+        self.warehouse_combo.bind('<<ComboboxSelected>>', self.on_warehouse_selected)
+        
+        # Cargar bodegas
+        self.load_warehouses()
+        
+        # Frame de opciones (inicialmente deshabilitado)
+        self.options_frame = ttk.LabelFrame(
+            main_frame,
+            text="Opciones Disponibles",
+            padding=20
+        )
+        self.options_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Crear botones de opciones
+        buttons_frame = ttk.Frame(self.options_frame)
+        buttons_frame.pack(expand=True)
+        
+        # Botón de Inventario
+        self.inventory_button = ttk.Button(
+            buttons_frame,
+            text="📦 Inventario",
+            command=lambda: self.app.show_inventory_page(),
+            style='Primary.TButton',
+            width=20,
+            state=tk.DISABLED
+        )
+        self.inventory_button.grid(row=0, column=0, padx=10, pady=10)
+        
+        # Botón de Retiros
+        self.withdrawals_button = ttk.Button(
+            buttons_frame,
+            text="📤 Retiros",
+            command=lambda: self.app.show_withdrawals_page(),
+            style='Success.TButton',
+            width=20,
+            state=tk.DISABLED
+        )
+        self.withdrawals_button.grid(row=0, column=1, padx=10, pady=10)
+        
+        # Botón de Historial
+        self.history_button = ttk.Button(
+            buttons_frame,
+            text="📊 Historial",
+            command=lambda: self.app.show_history_page(),
+            style='Info.TButton',
+            width=20,
+            state=tk.DISABLED
+        )
+        self.history_button.grid(row=0, column=2, padx=10, pady=10)
+        
+        # Descripciones
+        ttk.Label(
+            buttons_frame,
+            text="Consultar stock\ny gestionar items",
+            font=('Arial', Config.FONT_SIZE_SMALL),
+            justify=tk.CENTER
+        ).grid(row=1, column=0, padx=10, pady=(0, 10))
+        
+        ttk.Label(
+            buttons_frame,
+            text="Realizar retiros\ncon código de barras",
+            font=('Arial', Config.FONT_SIZE_SMALL),
+            justify=tk.CENTER
+        ).grid(row=1, column=1, padx=10, pady=(0, 10))
+        
+        ttk.Label(
+            buttons_frame,
+            text="Ver movimientos\ny transacciones",
+            font=('Arial', Config.FONT_SIZE_SMALL),
+            justify=tk.CENTER
+        ).grid(row=1, column=2, padx=10, pady=(0, 10))
+    
+    def load_warehouses(self):
+        warehouses = self.app.data_manager.get_warehouses()
+        warehouse_names = [f"{w['name']} - {w['code']}" for w in warehouses]
+        self.warehouse_combo['values'] = warehouse_names
+        self.warehouses = warehouses
+    
+    def on_warehouse_selected(self, event):
+        selected_index = self.warehouse_combo.current()
+        if selected_index >= 0:
+            selected_warehouse = self.warehouses[selected_index]
+            self.app.session_state.set_warehouse(selected_warehouse)
+            
+            # Habilitar botones
+            self.inventory_button.config(state=tk.NORMAL)
+            self.withdrawals_button.config(state=tk.NORMAL)
+            self.history_button.config(state=tk.NORMAL)
+            
+            # Mostrar mensaje de confirmación
+            messagebox.showinfo(
+                "Bodega Seleccionada",
+                f"Ha seleccionado: {selected_warehouse['name']}\n"
+                f"Ubicación: {selected_warehouse['location']}"
+            )
+    
+    def logout(self):
+        if messagebox.askyesno("Cerrar Sesión", "¿Está seguro que desea cerrar sesión?"):
+            self.app.session_state.logout()
+            self.app.show_login_page()
+
 
 # Configuración de colores y estilos
 class Config:
