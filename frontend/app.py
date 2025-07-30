@@ -128,6 +128,32 @@ class LoginPage(ttk.Frame):
             width=30
         )
         login_button.grid(row=3, column=0, columnspan=2, pady=20)
+        
+        # Información de usuarios de prueba
+        info_frame = ttk.Frame(center_frame, style='Card.TFrame')
+        info_frame.pack(pady=(0, 20))
+        
+        ttk.Label(
+            info_frame,
+            text="Usuarios de prueba:",
+            font=('Arial', Config.FONT_SIZE_SMALL, 'italic'),
+            style='Card.TLabel'
+        ).pack()
+        
+        users_info = [
+            "Admin_Santiago (pass: admin123)",
+            "Operador_Juan (pass: admin123)",
+            "Operador_Maria (pass: admin123)",
+            "Supervisor_Carlos (pass: admin123)"
+        ]
+        
+        for info in users_info:
+            ttk.Label(
+                info_frame,
+                text=info,
+                font=('Arial', Config.FONT_SIZE_SMALL),
+                style='Card.TLabel'
+            ).pack()
     
     def login(self):
         username = self.username_var.get()
@@ -150,10 +176,11 @@ class LoginPage(ttk.Frame):
 
 # Página Principal
 class HomePage(ttk.Frame):
-    def __init__(self, parent, app):
+    def __init__(self, parent, app, selected_warehouse=None):
         super().__init__(parent)
         self.app = app
         self.pack(fill=tk.BOTH, expand=True)
+        self.selected_warehouse = selected_warehouse
         
         # Header
         header_frame = ttk.Frame(self, style='Header.TFrame')
@@ -490,10 +517,11 @@ class BarcodeScanner(ttk.Frame):
 
 # Página Principal
 class HomePage(ttk.Frame):
-    def __init__(self, parent, app):
+    def __init__(self, parent, app, selected_warehouse=None):
         super().__init__(parent)
         self.app = app
         self.pack(fill=tk.BOTH, expand=True)
+        self.selected_warehouse = selected_warehouse
         
         # Header
         header_frame = ttk.Frame(self, style='Header.TFrame')
@@ -1933,7 +1961,7 @@ class InventoryApp:
     
     def show_home_page(self):
         self.clear_frame()
-        self.current_page = HomePage(self.main_frame, self, self.selected_warehouse)
+        self.current_page = HomePage(self.main_frame, self)
     
     def show_inventory_page(self):
         self.clear_frame()
@@ -1962,4 +1990,4 @@ def main():
     root.mainloop()
 
 if __name__ == "__main__":
-    main() 
+    main()
