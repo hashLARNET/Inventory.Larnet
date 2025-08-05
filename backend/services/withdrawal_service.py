@@ -6,6 +6,7 @@ from backend.models.item import Item
 from backend.models.user import User
 from backend.models.warehouse import Warehouse
 from backend.schemas.withdrawal import WithdrawalCreate
+from backend.schemas.withdrawal import Withdrawal as WithdrawalSchema, WithdrawalItem as WithdrawalItemSchema
 from backend.services.history_service import HistoryService
 from backend.core.exceptions import (
     ItemNotFoundException, 
@@ -18,7 +19,7 @@ class WithdrawalService:
         self.db = db
         self.history_service = HistoryService(db)
     
-    def create_withdrawal(self, withdrawal_data: WithdrawalCreate, user_id: str) -> Withdrawal:
+    def create_withdrawal(self, withdrawal_data: WithdrawalCreate, user_id: str) -> WithdrawalSchema:
         # Verify warehouse exists
         warehouse = self.db.query(Warehouse).filter(Warehouse.id == withdrawal_data.warehouse_id).first()
         if not warehouse:
@@ -74,11 +75,33 @@ class WithdrawalService:
         
         self.db.commit()
         self.db.refresh(db_withdrawal)
-        return db_withdrawal
+        return self.convert_to_withdrawal_schema(db_withdrawal)
     
-    def get_withdrawals_by_warehouse(self, warehouse_id: str) -> List[Withdrawal]:
+
+    def convert_to_withdrawal_schema(self, withdrawal: Withdrawal) -> WithdrawalSchema:
+        return WithdrawalSchema(
+            id=withdrawal.id,
+            obra=withdrawal.obra,
+            notes=withdrawal.notes,
+            warehouse_id=withdrawal.warehouse_id,
+            withdrawal_date=withdrawal.withdrawal_date,
+            user_id=withdrawal.user_id,
+            items=[
+                WithdrawalItemSchema(
+                    id=item.id,
+                    item_id=item.item_id,
+                    quantity=item.quantity,
+                    item_name=item.item.name
+                ) for item in withdrawal.items
+            ]
+        )
+
+
+    def get_withdrawals_by_warehouse(self, warehouse_id: str) -> List[WithdrawalSchema]:
         return self.db.query(Withdrawal).filter(Withdrawal.warehouse_id == warehouse_id).all()
     
     def can_withdraw_from_warehouse(self, user_warehouse_id: str, target_warehouse_id: str) -> bool:
         """US5: Only allow withdrawals from physical location"""
         return user_warehouse_id == target_warehouse_id
+    
+    

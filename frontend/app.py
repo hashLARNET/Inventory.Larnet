@@ -1147,7 +1147,7 @@ class WithdrawalsPage(ttk.Frame):
     def show_quantity_dialog(self, item):
         dialog = tk.Toplevel(self)
         dialog.title(f"Retirar: {item['name']}")
-        dialog.geometry("400x300")
+        dialog.geometry("400x400")
         dialog.transient(self)
         dialog.grab_set()
         
@@ -1244,6 +1244,8 @@ class WithdrawalsPage(ttk.Frame):
                 
             except ValueError:
                 error_label.config(text="Ingrese una cantidad válida")
+        
+        dialog.bind("<Return>", lambda event: add_to_withdrawal())
         
         ttk.Button(
             button_frame,
