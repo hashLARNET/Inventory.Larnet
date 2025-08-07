@@ -208,31 +208,7 @@ class LoginPage(ttk.Frame):
         login_button.grid(row=3, column=0, columnspan=2, pady=20)
         
         # Información de usuarios de prueba
-        info_frame = ttk.Frame(center_frame, style='Card.TFrame')
-        info_frame.pack(pady=(0, 20))
-        
-        ttk.Label(
-            info_frame,
-            text="Usuarios de prueba:",
-            font=('Arial', Config.FONT_SIZE_SMALL, 'italic'),
-            style='Card.TLabel'
-        ).pack()
-        
-        users_info = [
-            "Admin_Santiago (pass: admin123)",
-            "Operador_Juan (pass: admin123)",
-            "Operador_Maria (pass: admin123)",
-            "Supervisor_Carlos (pass: admin123)"
-        ]
-        
-        for info in users_info:
-            ttk.Label(
-                info_frame,
-                text=info,
-                font=('Arial', Config.FONT_SIZE_SMALL),
-                style='Card.TLabel'
-            ).pack()
-    
+
     def login(self):
         username = self.username_var.get()
         password = self.password_var.get()
@@ -1520,7 +1496,7 @@ class InventoryApp:
         style.configure(
             'Primary.TButton',
             font=('Arial', Config.FONT_SIZE_MEDIUM),
-            foreground='white',
+            foreground='black',
             background=Config.PRIMARY_COLOR,
             borderwidth=0,
             focuscolor='none'
@@ -1532,7 +1508,7 @@ class InventoryApp:
         style.configure(
             'Success.TButton',
             font=('Arial', Config.FONT_SIZE_MEDIUM),
-            foreground='white',
+            foreground='black',
             background=Config.SUCCESS_COLOR,
             borderwidth=0,
             focuscolor='none'
@@ -1555,7 +1531,7 @@ class InventoryApp:
         style.configure(
             'Danger.TButton',
             font=('Arial', Config.FONT_SIZE_MEDIUM),
-            foreground='white',
+            foreground='black',
             background=Config.ERROR_COLOR,
             borderwidth=0,
             focuscolor='none'
@@ -1567,7 +1543,7 @@ class InventoryApp:
         style.configure(
             'Info.TButton',
             font=('Arial', Config.FONT_SIZE_MEDIUM),
-            foreground='white',
+            foreground='black',
             background=Config.SECONDARY_COLOR,
             borderwidth=0,
             focuscolor='none'
