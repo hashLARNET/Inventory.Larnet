@@ -69,3 +69,15 @@ def get_items_by_obra(
 ):
     inventory_service = InventoryService(db)
     return inventory_service.get_items_by_obra(obra, warehouse_id)
+
+@router.get("/items/warehouse/{warehouse_id}", response_model=List[Item])
+def get_items_by_warehouse(
+    warehouse_id: str,
+    page: int = 1,      # Agregar
+    per_page: int = 50, # Agregar
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    inventory_service = InventoryService(db)
+    # Agregar offset/limit:
+    return inventory_service.get_items_by_warehouse(warehouse_id, page, per_page)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Text, Numeric
+from sqlalchemy import Column, String, Integer, ForeignKey, Text, Numeric, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from .base import BaseModel
@@ -19,3 +19,8 @@ class Item(BaseModel):
     # Relationships
     warehouse = relationship("Warehouse", back_populates="items")
     withdrawal_items = relationship("WithdrawalItem", back_populates="item")
+
+    __table_args__ = (
+        Index('idx_warehouse_obra', 'warehouse_id', 'obra'),  # Para búsquedas por bodega+obra
+        Index('idx_name_barcode', 'name', 'barcode'),        # Para búsquedas de texto
+    )

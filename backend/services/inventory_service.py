@@ -1,5 +1,6 @@
-from sqlalchemy.orm import Session
-from typing import List, Optional
+from sqlalchemy.orm import Session, joinedload, selectinload
+from typing import List, Optional, Tuple
+from functools import lru_cache
 from backend.models.item import Item
 from backend.models.warehouse import Warehouse
 from backend.models.user import User
@@ -7,6 +8,14 @@ from backend.schemas.item import ItemCreate, ItemUpdate
 from backend.core.exceptions import ItemNotFoundException, WarehouseNotFoundException
 from backend.services.history_service import HistoryService
 import uuid
+
+
+@lru_cache(maxsize=32)
+def _get_warehouse_cached(self, warehouse_id: str) -> Tuple:
+    """Cache warehouse data since it changes rarely"""
+    warehouse = self.db.query(Warehouse).filter(Warehouse.id == warehouse_id).first()
+    return (warehouse.id, warehouse.name, warehouse.code) if warehouse else None
+
 
 class InventoryService:
     def __init__(self, db: Session):
@@ -71,10 +80,14 @@ class InventoryService:
         return item
     
     def get_items_by_warehouse(self, warehouse_id: str) -> List[Item]:
-        return self.db.query(Item).filter(Item.warehouse_id == warehouse_id).all()
+        return self.db.query(Item).options(
+            joinedload(Item.warehouse)  # Evita N+1 queries
+        ).filter(Item.warehouse_id == warehouse_id).all()
     
     def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Item]:
-        search_query = self.db.query(Item).filter(
+        search_query = self.db.query(Item).options(
+            joinedload(Item.warehouse)
+        ).filter(
             (Item.name.ilike(f"%{query}%")) |
             (Item.n_factura.ilike(f"%{query}%")) |
             (Item.barcode.ilike(f"%{query}%"))

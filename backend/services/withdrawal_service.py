@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from typing import List
 from datetime import datetime
 from backend.models.withdrawal import Withdrawal, WithdrawalItem
@@ -21,9 +21,9 @@ class WithdrawalService:
     
     def create_withdrawal(self, withdrawal_data: WithdrawalCreate, user_id: str) -> WithdrawalSchema:
         # Verify warehouse exists
-        warehouse = self.db.query(Warehouse).filter(Warehouse.id == withdrawal_data.warehouse_id).first()
-        if not warehouse:
-            raise WarehouseNotFoundException(withdrawal_data.warehouse_id)
+        warehouse = self.db.query(Warehouse).options(
+        selectinload(Warehouse.items)  # Pre-cargar items si los necesitas
+        ).filter(Warehouse.id == withdrawal_data.warehouse_id).first()
         
         # Create withdrawal record
         db_withdrawal = Withdrawal(
@@ -38,10 +38,14 @@ class WithdrawalService:
         self.db.flush()  # Get the ID without committing
         
         # Process each item in the withdrawal
+        item_ids = [item_data.item_id for item_data in withdrawal_data.items]
+        items = self.db.query(Item).options(
+            joinedload(Item.warehouse)
+        ).filter(Item.id.in_(item_ids)).all()
+        items_dict = {str(item.id): item for item in items}
+
         for item_data in withdrawal_data.items:
-            item = self.db.query(Item).filter(Item.id == item_data.item_id).first()
-            if not item:
-                raise ItemNotFoundException(item_data.item_id)
+            item = items_dict.get(str(item_data.item_id))
             
             # Check if item belongs to the same warehouse
             if item.warehouse_id != withdrawal_data.warehouse_id:
