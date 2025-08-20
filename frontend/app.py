@@ -2375,18 +2375,7 @@ class InventoryPage(ttk.Frame):
             messagebox.showerror("Error", f"Error cargando items: {str(e)}")
             self.stats_label.config(text="Error al cargar datos")
 
-    def volver_home(self):
-        print("DEBUG: Intentando volver...")
-        try:
-            if hasattr(self.app, 'show_home_page'):
-                print("DEBUG: Método show_home_page encontrado")
-                self.app.show_home_page()
-            else:
-                print("DEBUG: Método show_home_page NO encontrado")
-                # Alternativa: destruir la ventana actual
-                self.destroy()
-        except Exception as e:
-            print(f"DEBUG: Error al volver: {e}")
+
 
 # Página de Retiros
 class WithdrawalsPage(ttk.Frame):
@@ -2747,6 +2736,19 @@ class WithdrawalsPage(ttk.Frame):
             
         except Exception as e:
             messagebox.showerror("Error", f"Error al confirmar retiro: {str(e)}")
+
+    def volver_home(self):
+        print("DEBUG: Intentando volver...")
+        try:
+            if hasattr(self.app, 'show_home_page'):
+                print("DEBUG: Método show_home_page encontrado")
+                self.app.show_home_page()
+            else:
+                print("DEBUG: Método show_home_page NO encontrado")
+                # Alternativa: destruir la ventana actual
+                self.destroy()
+        except Exception as e:
+            print(f"DEBUG: Error al volver: {e}")
 
 # Página de Historial
 class HistoryPage(ttk.Frame):
