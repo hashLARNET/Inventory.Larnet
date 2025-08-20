@@ -7,6 +7,7 @@ class DataManager:
         self.api_client = APIClient()
         self.current_user = None
         self.current_warehouse = None
+
     
     def verify_login(self, username: str, password: str) -> Optional[Dict[str, Any]]:
         """Verify login credentials"""
@@ -94,6 +95,26 @@ class DataManager:
         if not self.current_warehouse:
             return []
         return self.api_client.get_history_by_warehouse(str(self.current_warehouse["id"]))
+        
+    def send_history_report_email(self, receiver_email: str, subject: str = None, 
+                                body: str = None, warehouse_name: str = None,
+                                warehouse_id: str = None) -> Dict[str, Any]:
+        """Send history report email - CORREGIDO: ahora acepta warehouse_id"""
+        # Si no se proporciona warehouse_id, usar el current_warehouse
+        if warehouse_id is None and self.current_warehouse:
+            warehouse_id = str(self.current_warehouse['id'])
+        
+        return self.api_client.send_history_report_email(
+            receiver_email=receiver_email,
+            subject=subject,
+            body=body,
+            warehouse_name=warehouse_name,
+            warehouse_id=warehouse_id
+        )
+    
+    def check_email_service(self) -> Dict[str, Any]:
+        """Check if email service is available"""
+        return self.api_client.check_email_service()
     
     def logout(self):
         """Logout user"""

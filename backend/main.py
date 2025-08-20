@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api.v1.endpoints import auth, inventory, withdrawals, warehouses, history
+from backend.api.v1.endpoints import auth, inventory, withdrawals, warehouses, history, email
 from backend.config import settings
 from backend.database.base import engine
 from backend.models import Base
@@ -29,6 +29,7 @@ app.include_router(warehouses.router, prefix="/api/v1/warehouses", tags=["wareho
 app.include_router(inventory.router, prefix="/api/v1/inventory", tags=["inventory"])
 app.include_router(withdrawals.router, prefix="/api/v1/withdrawals", tags=["withdrawals"])
 app.include_router(history.router, prefix="/api/v1/history", tags=["history"])
+app.include_router(email.router, prefix="/api/v1/email", tags=["email"])
 
 @app.get("/")
 def read_root():

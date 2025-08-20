@@ -1351,7 +1351,15 @@ class HistoryPage(ttk.Frame):
             command=self.load_history,
             style='Primary.TButton'
         )
-        refresh_button.pack(side=tk.RIGHT)
+        refresh_button.pack(side=tk.RIGHT, padx=(0, 10))
+
+        email_button = ttk.Button(
+            header_frame,
+            text="✉︎ Enviar Reporte",
+            command=self.show_email_dialog,
+            style='Primary.TButton'
+        )
+        email_button.pack(side=tk.RIGHT)
         
         # Frame principal
         main_frame = ttk.Frame(self)
@@ -1394,6 +1402,143 @@ class HistoryPage(ttk.Frame):
         # Cargar historial
         self.load_history()
     
+    def show_email_dialog(self):
+        """Mostrar diálogo para enviar email"""
+        dialog = tk.Toplevel(self)
+        dialog.title("Enviar Reporte por Email")
+        dialog.geometry("500x300")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Frame principal
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Título
+        ttk.Label(
+            main_frame,
+            text="Enviar Reporte de Historial",
+            font=('Arial', Config.FONT_SIZE_LARGE, 'bold')
+        ).pack(pady=(0, 20))
+        
+        # Campo de email
+        email_frame = ttk.Frame(main_frame)
+        email_frame.pack(fill=tk.X, pady=10)
+        
+        ttk.Label(
+            email_frame,
+            text="Email destino:",
+            font=('Arial', Config.FONT_SIZE_MEDIUM)
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.email_var = tk.StringVar()
+        email_entry = ttk.Entry(
+            email_frame,
+            textvariable=self.email_var,
+            font=('Arial', Config.FONT_SIZE_MEDIUM),
+            width=30
+        )
+        email_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        # Campo de asunto
+        subject_frame = ttk.Frame(main_frame)
+        subject_frame.pack(fill=tk.X, pady=10)
+        
+        ttk.Label(
+            subject_frame,
+            text="Asunto:",
+            font=('Arial', Config.FONT_SIZE_MEDIUM)
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.subject_var = tk.StringVar(value="Historial de acciones de bodega")
+        subject_entry = ttk.Entry(
+            subject_frame,
+            textvariable=self.subject_var,
+            font=('Arial', Config.FONT_SIZE_MEDIUM),
+            width=30
+        )
+        subject_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        # Mensaje de estado
+        self.dialog_status_label = ttk.Label(
+            main_frame,
+            text="",
+            font=('Arial', Config.FONT_SIZE_SMALL),
+            foreground='blue'
+        )
+        self.dialog_status_label.pack(pady=10)
+        
+        # Botones
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=20)
+        
+        ttk.Button(
+            button_frame,
+            text="Cancelar",
+            command=dialog.destroy,
+            style='Secondary.TButton'
+        ).pack(side=tk.LEFT, padx=10)
+        
+        ttk.Button(
+            button_frame,
+            text="Enviar Reporte",
+            command=lambda: self.send_email_report(dialog),
+            style='Primary.TButton'
+        ).pack(side=tk.LEFT, padx=10)
+        
+        # Focus en el campo de email
+        email_entry.focus()
+    
+    def send_email_report(self, dialog):
+        """Enviar reporte por email a través del backend - filtrado por bodega actual"""
+        email = self.email_var.get().strip()
+        subject = self.subject_var.get().strip()
+        
+        if not email:
+            self.dialog_status_label.config(text="Por favor ingrese un email válido", foreground='red')
+            return
+        
+        # Deshabilitar botones durante el envío
+        for widget in dialog.winfo_children():
+            if isinstance(widget, ttk.Button):
+                widget.config(state=tk.DISABLED)
+        
+        self.dialog_status_label.config(text="Enviando reporte...", foreground='blue')
+        
+        # Get current warehouse ID for filtering
+        current_warehouse = self.app.session_state.current_warehouse
+        warehouse_id = str(current_warehouse['id']) if current_warehouse else None
+        warehouse_name = current_warehouse['name'] if current_warehouse else "Desconocida"
+        
+        # Usar el data_manager existente para llamar al backend con filtro de bodega
+        result = self.app.data_manager.send_history_report_email(
+            receiver_email=email,
+            subject=subject,
+            warehouse_name=warehouse_name,
+            warehouse_id=warehouse_id  # Pass warehouse ID for filtering
+        )
+        
+        if result.get('success'):
+            records_count = result.get('records_count', 0)
+            self.dialog_status_label.config(
+                text=f"✅ Reporte enviado exitosamente ({records_count} registros)", 
+                foreground='green'
+            )
+            self.status_label.config(
+                text=f"Reporte de {warehouse_name} enviado a {email} ({records_count} registros)", 
+                foreground='green'
+            )
+            # Cerrar diálogo después de 2 segundos
+            self.after(2000, dialog.destroy)
+        else:
+            error_msg = result.get('message', 'Error desconocido')
+            self.dialog_status_label.config(text=f"❌ Error: {error_msg}", foreground='red')
+            # Rehabilitar botones
+            for widget in dialog.winfo_children():
+                if isinstance(widget, ttk.Button):
+                    widget.config(state=tk.NORMAL)
+    
+
     def load_history(self):
         """Cargar historial de movimientos"""
         # Limpiar tabla

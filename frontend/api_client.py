@@ -141,3 +141,61 @@ class APIClient:
         except Exception as e:
             print(f"Error obteniendo historial: {e}")
             return []
+        
+
+    def send_history_report_email(self, receiver_email: str, subject: str = None, 
+                                body: str = None, warehouse_name: str = None,
+                                warehouse_id: str = None) -> Dict[str, Any]:
+        """Send history report email through backend API"""
+        try:
+            payload = {
+                "receiver_email": receiver_email,
+                "subject": subject,
+                "body": body,
+                "warehouse_name": warehouse_name,
+                "warehouse_id": warehouse_id
+            }
+            
+            # Remove None values from payload
+            payload = {k: v for k, v in payload.items() if v is not None}
+            
+            response = requests.post(
+                f"{self.base_url}/email/send-history-report",
+                headers=self.headers,
+                json=payload,
+                timeout=60  # Longer timeout for email operations
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {
+                    "success": False,
+                    "message": f"Error del servidor: {response.status_code} - {response.text}"
+                }
+                
+        except requests.exceptions.Timeout:
+            return {"success": False, "message": "Timeout: La operación de email tardó demasiado"}
+        except requests.exceptions.ConnectionError:
+            return {"success": False, "message": "Error de conexión: No se pudo conectar al servidor"}
+        except requests.exceptions.RequestException as e:
+            return {"success": False, "message": f"Error de red: {str(e)}"}
+        except Exception as e:
+            return {"success": False, "message": f"Error inesperado: {str(e)}"}
+    
+    def check_email_service(self) -> Dict[str, Any]:
+        """Check if email service is available"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/email/health",
+                headers=self.headers,
+                timeout=10
+            )
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"status": "error", "message": f"Email service unavailable: {str(e)}"}
+        except Exception as e:
+            return {"status": "error", "message": f"Unexpected error: {str(e)}"}
+
+        
+    
