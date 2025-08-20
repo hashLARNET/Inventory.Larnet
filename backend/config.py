@@ -25,10 +25,10 @@ class Settings(BaseSettings):
     
     # Database
     database_url: str = ""
-    
-    email_user: str = ""
-    email_password: str = ""
 
+    email_user: str = ""
+    email_password: str = ""    
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # Encode database URL to handle special characters

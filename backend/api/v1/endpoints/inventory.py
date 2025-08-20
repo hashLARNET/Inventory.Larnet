@@ -13,6 +13,13 @@ router = APIRouter()
 class AddStockRequest(BaseModel):
     quantity: int
 
+class TransferRequest(BaseModel):
+    item_id: str
+    from_obra: str
+    to_obra: str
+    quantity: int
+    notes: str = ""
+
 @router.post("/items", response_model=Item)
 def create_item(
     item: ItemCreate,
@@ -44,11 +51,13 @@ def get_item_by_barcode(
 @router.get("/items/warehouse/{warehouse_id}", response_model=List[Item])
 def get_items_by_warehouse(
     warehouse_id: str,
+    page: int = 1,
+    per_page: int = 1000,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     inventory_service = InventoryService(db)
-    return inventory_service.get_items_by_warehouse(warehouse_id)
+    return inventory_service.get_items_by_warehouse(warehouse_id, page, per_page)
 
 @router.get("/items/search", response_model=List[Item])
 def search_items(
@@ -70,14 +79,27 @@ def get_items_by_obra(
     inventory_service = InventoryService(db)
     return inventory_service.get_items_by_obra(obra, warehouse_id)
 
-@router.get("/items/warehouse/{warehouse_id}", response_model=List[Item])
-def get_items_by_warehouse(
+@router.get("/obras/warehouse/{warehouse_id}", response_model=List[str])
+def get_obras_by_warehouse(
     warehouse_id: str,
-    page: int = 1,      # Agregar
-    per_page: int = 50, # Agregar
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     inventory_service = InventoryService(db)
-    # Agregar offset/limit:
-    return inventory_service.get_items_by_warehouse(warehouse_id, page, per_page)
+    return inventory_service.get_available_obras(warehouse_id)
+
+@router.post("/transfer", response_model=bool)
+def transfer_item_between_obras(
+    transfer_data: TransferRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    inventory_service = InventoryService(db)
+    return inventory_service.transfer_item_between_obras(
+        transfer_data.item_id,
+        transfer_data.from_obra,
+        transfer_data.to_obra,
+        transfer_data.quantity,
+        current_user,
+        transfer_data.notes
+    )

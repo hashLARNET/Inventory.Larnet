@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware 
 from backend.api.v1.endpoints import auth, inventory, withdrawals, warehouses, history, email
 from backend.config import settings
 from backend.database.base import engine

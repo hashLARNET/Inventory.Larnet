@@ -10,13 +10,6 @@ from backend.services.history_service import HistoryService
 import uuid
 
 
-@lru_cache(maxsize=32)
-def _get_warehouse_cached(self, warehouse_id: str) -> Tuple:
-    """Cache warehouse data since it changes rarely"""
-    warehouse = self.db.query(Warehouse).filter(Warehouse.id == warehouse_id).first()
-    return (warehouse.id, warehouse.name, warehouse.code) if warehouse else None
-
-
 class InventoryService:
     def __init__(self, db: Session):
         self.db = db
@@ -79,10 +72,11 @@ class InventoryService:
             raise ItemNotFoundException(barcode=barcode)
         return item
     
-    def get_items_by_warehouse(self, warehouse_id: str) -> List[Item]:
+    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 1000) -> List[Item]:
+        offset = (page - 1) * per_page
         return self.db.query(Item).options(
-            joinedload(Item.warehouse)  # Evita N+1 queries
-        ).filter(Item.warehouse_id == warehouse_id).all()
+            joinedload(Item.warehouse)
+        ).filter(Item.warehouse_id == warehouse_id).offset(offset).limit(per_page).all()
     
     def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Item]:
         search_query = self.db.query(Item).options(
@@ -113,3 +107,72 @@ class InventoryService:
             Item.obra == obra,
             Item.warehouse_id == warehouse_id
         ).all()
+    
+    def get_available_obras(self, warehouse_id: str) -> List[str]:
+        """Get all available obras in a warehouse"""
+        obras = self.db.query(Item.obra).filter(
+            Item.warehouse_id == warehouse_id
+        ).distinct().all()
+        return [obra[0] for obra in obras]
+
+    def get_items_by_obra_detailed(self, warehouse_id: str, obra: str = None) -> List[Item]:
+        """Get items by obra with detailed information"""
+        query = self.db.query(Item).options(
+            joinedload(Item.warehouse)
+        ).filter(Item.warehouse_id == warehouse_id)
+        
+        if obra and obra != "Todas las obras":
+            query = query.filter(Item.obra == obra)
+        
+        return query.all()
+
+    def transfer_item_between_obras(self, item_id: str, from_obra: str, to_obra: str, 
+                                   quantity: int, user: User, notes: str = "") -> bool:
+        """Transfer items between obras"""
+        item = self.db.query(Item).filter(Item.id == item_id).first()
+        if not item or item.stock < quantity:
+            return False
+        
+        # Get warehouse for history
+        warehouse = self.db.query(Warehouse).filter(Warehouse.id == item.warehouse_id).first()
+        
+        # Create new item for destination obra or update existing
+        existing_item = self.db.query(Item).filter(
+            Item.name == item.name,
+            Item.warehouse_id == item.warehouse_id,
+            Item.obra == to_obra,
+            Item.barcode != item.barcode  # Different barcode for different obra
+        ).first()
+        
+        if existing_item:
+            # Update existing item
+            existing_item.stock += quantity
+        else:
+            # Create new item for destination obra
+            new_barcode = f"{item.barcode}_{to_obra[:3]}"  # Modify barcode for new obra
+            new_item = Item(
+                name=item.name,
+                description=item.description,
+                barcode=new_barcode,
+                stock=quantity,
+                obra=to_obra,
+                n_factura=item.n_factura,
+                warehouse_id=item.warehouse_id
+            )
+            self.db.add(new_item)
+        
+        # Reduce stock from source item
+        item.stock -= quantity
+        
+        # Add history records
+        self.history_service.add_history_record(
+            action_type="adjustment",
+            item=item,
+            quantity=-quantity,
+            user=user,
+            warehouse=warehouse,
+            notes=f"Transferencia desde obra {from_obra} a {to_obra}: {notes}"
+        )
+        
+        self.db.commit()
+        return True

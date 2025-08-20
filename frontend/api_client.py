@@ -95,6 +95,21 @@ class APIClient:
             print(f"Error buscando items: {e}")
             return []
     
+    def get_items_by_obra(self, obra: str, warehouse_id: str) -> List[Dict[str, Any]]:
+        """Get items by obra"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/inventory/items/obra/{obra}/warehouse/{warehouse_id}",
+                headers=self.headers,
+                timeout=10
+            )
+            if response.status_code == 200:
+                return response.json()
+            return []
+        except Exception as e:
+            print(f"Error obteniendo items por obra: {e}")
+            return []
+    
     def create_item(self, item_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Create new item"""
         try:
@@ -142,7 +157,6 @@ class APIClient:
             print(f"Error obteniendo historial: {e}")
             return []
         
-
     def send_history_report_email(self, receiver_email: str, subject: str = None, 
                                 body: str = None, warehouse_name: str = None,
                                 warehouse_id: str = None) -> Dict[str, Any]:
@@ -197,5 +211,33 @@ class APIClient:
         except Exception as e:
             return {"status": "error", "message": f"Unexpected error: {str(e)}"}
 
-        
+
     
+    def get_obras_by_warehouse(self, warehouse_id: str) -> List[str]:
+        """Get available obras in warehouse"""
+        try:
+            response = requests.get(
+                f"{self.base_url}/inventory/obras/warehouse/{warehouse_id}",
+                headers=self.headers,
+                timeout=10
+            )
+            if response.status_code == 200:
+                return response.json()
+            return []
+        except Exception as e:
+            print(f"Error obteniendo obras: {e}")
+            return []
+
+    def transfer_item_between_obras(self, transfer_data: Dict[str, Any]) -> bool:
+        """Transfer item between obras"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/inventory/transfer",
+                headers=self.headers,
+                json=transfer_data,
+                timeout=10
+            )
+            return response.status_code == 200
+        except Exception as e:
+            print(f"Error transfiriendo item: {e}")
+            return False
