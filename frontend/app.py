@@ -2836,12 +2836,13 @@ class HistoryPage(ttk.Frame):
         self.load_history()
     
     def show_email_dialog(self):
-        """Mostrar diálogo para enviar email"""
+        """Mostrar diálogo para enviar email con validación"""
         dialog = tk.Toplevel(self)
         dialog.title("Enviar Reporte por Email")
-        dialog.geometry("500x300")
+        dialog.geometry("600x450")  # Un poco más grande para mensajes
         dialog.transient(self)
         dialog.grab_set()
+
         
         # Frame principal
         main_frame = ttk.Frame(dialog, padding=20)
@@ -2856,7 +2857,7 @@ class HistoryPage(ttk.Frame):
         
         # Campo de email
         email_frame = ttk.Frame(main_frame)
-        email_frame.pack(fill=tk.X, pady=10)
+        email_frame.pack(fill=tk.X, pady=5)
         
         ttk.Label(
             email_frame,
@@ -2872,6 +2873,25 @@ class HistoryPage(ttk.Frame):
             width=30
         )
         email_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        # Botón para validar email
+        validate_button = ttk.Button(
+            email_frame,
+            text="Validar",
+            command=self.validate_email_input,
+            style='Secondary.TButton',
+            width=10
+        )
+        validate_button.pack(side=tk.RIGHT, padx=(10, 0))
+        
+        # Mensaje de validación
+        self.validation_label = ttk.Label(
+            main_frame,
+            text="Ingrese un email y presione Validar",
+            font=('Arial', Config.FONT_SIZE_SMALL),
+            foreground='blue'
+        )
+        self.validation_label.pack(pady=5)
         
         # Campo de asunto
         subject_frame = ttk.Frame(main_frame)
@@ -2912,15 +2932,44 @@ class HistoryPage(ttk.Frame):
             style='Secondary.TButton'
         ).pack(side=tk.LEFT, padx=10)
         
-        ttk.Button(
+        self.send_button = ttk.Button(
             button_frame,
             text="Enviar Reporte",
             command=lambda: self.send_email_report(dialog),
-            style='Primary.TButton'
-        ).pack(side=tk.LEFT, padx=10)
+            style='Primary.TButton',
+            state=tk.DISABLED  # Inicialmente deshabilitado
+        )
+        self.send_button.pack(side=tk.LEFT, padx=10)
+        
+        # Bind eventos para validación en tiempo real
+        email_entry.bind('<KeyRelease>', lambda e: self.on_email_changed())
+        email_entry.bind('<Return>', lambda e: self.validate_email_input())
         
         # Focus en el campo de email
         email_entry.focus()
+    
+    def on_email_changed(self):
+        """Cuando el email cambia, resetear validación"""
+        self.validation_label.config(text="Presione Validar para verificar el email", foreground='blue')
+        self.send_button.config(state=tk.DISABLED)
+    
+    def validate_email_input(self):
+        """Validar el email ingresado"""
+        email = self.email_var.get().strip()
+        
+        if not email:
+            self.validation_label.config(text="Ingrese un email para validar", foreground='red')
+            return
+        
+        # Validar el email
+        is_valid, message = self.app.data_manager.validate_email_format(email)
+        
+        if is_valid:
+            self.validation_label.config(text=f"✅ {message}", foreground='green')
+            self.send_button.config(state=tk.NORMAL)
+        else:
+            self.validation_label.config(text=f"❌ {message}", foreground='red')
+            self.send_button.config(state=tk.DISABLED)
     
     def send_email_report(self, dialog):
         """Enviar reporte por email a través del backend - filtrado por bodega actual"""

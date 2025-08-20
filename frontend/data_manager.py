@@ -1,6 +1,7 @@
 from frontend.api_client import APIClient
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 import uuid
+import re
 
 class DataManager:
     def __init__(self):
@@ -180,6 +181,50 @@ class DataManager:
     def check_email_service(self) -> Dict[str, Any]:
         """Check if email service is available"""
         return self.api_client.check_email_service()
+    
+    def validate_email_format(self, email: str) -> Tuple[bool, str]:
+        """
+        Validación básica de formato de email con regex
+        """
+        try:
+            if not email or not isinstance(email, str):
+                return False, "El email no puede estar vacío"
+            
+            email = email.strip().lower()
+            
+            # Regex para validación básica de email
+            pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(pattern, email):
+                return False, "Formato de email inválido"
+            
+            # Verificar que no sea un email temporal o desechable
+            disposable_domains = [
+                'mailinator.com', 'tempmail.com', 'guerrillamail.com',
+                '10minutemail.com', 'throwawaymail.com', 'yopmail.com'
+            ]
+            
+            domain = email.split('@')[1]
+            if domain in disposable_domains:
+                return False, "No se permiten emails temporales o desechables"
+            
+            # Verificar dominios comunes
+            common_domains = [
+                'gmail.com', 'hotmail.com', 'outlook.com', 'larnet.com',
+                'gmail.cl', 'hotmail.cl', 'outlook.es'
+            ]
+            
+            if domain not in common_domains:
+                return False, f"Email invalido, ingrese un email valido"
+            
+            return True, "Email válido"
+            
+        except Exception as e:
+            return False, f"Error validando email: {str(e)}"
+    
+    def is_valid_email(self, email: str) -> bool:
+        """Versión simplificada"""
+        is_valid, _ = self.validate_email_format(email)
+        return is_valid
 
 
     def logout(self):
