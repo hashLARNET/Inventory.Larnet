@@ -2,12 +2,14 @@ from frontend.api_client import APIClient
 from typing import Dict, List, Optional, Any, Tuple
 import uuid
 import re
+from frontend.utils.cache import DataCache
 
 class DataManager:
     def __init__(self):
         self.api_client = APIClient()
         self.current_user = None
         self.current_warehouse = None
+        self.cache = DataCache(ttl_seconds=300)
     
     def verify_login(self, username: str, password: str) -> Optional[Dict[str, Any]]:
         """Verify login credentials"""
@@ -33,9 +35,18 @@ class DataManager:
         """Get all warehouses"""
         return self.api_client.get_warehouses()
     
-    def get_items_by_warehouse(self, warehouse_id: str) -> List[Dict[str, Any]]:
-        """Get items from specific warehouse"""
-        return self.api_client.get_items_by_warehouse(warehouse_id)
+    def get_items_by_warehouse(self, warehouse_id: str, page=1, per_page=50):
+        # Verificar caché
+        cached = self.cache.get('get_items_by_warehouse', warehouse_id, page, per_page)
+        if cached:
+            return cached
+        
+        # Obtener datos
+        data = self.api_client.get_items_by_warehouse(warehouse_id, page, per_page)
+        
+        # Guardar en caché
+        self.cache.set('get_items_by_warehouse', data, warehouse_id, page, per_page)
+        return data.get('items', []) if isinstance(data, dict) else data
     
     def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """Search items in warehouse"""
@@ -118,7 +129,9 @@ class DataManager:
     
     def get_warehouse_statistics(self, warehouse_id: str) -> Dict[str, Any]:
         """Get warehouse statistics"""
-        items = self.get_items_by_warehouse(warehouse_id)
+        data = self.get_items_by_warehouse(warehouse_id, page=1, per_page=1000)
+
+        items = data if isinstance(data, list) else data.get('items', [])
         
         if not items:
             return {

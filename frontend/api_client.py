@@ -45,20 +45,21 @@ class APIClient:
             print(f"Error obteniendo bodegas: {e}")
             return []
     
-    def get_items_by_warehouse(self, warehouse_id: str) -> List[Dict[str, Any]]:
-        """Get items by warehouse"""
+    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 100) -> Dict[str, Any]:
+        """Get items by warehouse with pagination"""
         try:
             response = requests.get(
                 f"{self.base_url}/inventory/items/warehouse/{warehouse_id}",
                 headers=self.headers,
+                params={"page": page, "per_page": per_page},
                 timeout=10
             )
             if response.status_code == 200:
                 return response.json()
-            return []
+            return {"items": [], "total": 0, "page": page, "per_page": per_page, "pages": 0}
         except Exception as e:
             print(f"Error obteniendo items: {e}")
-            return []
+            return {"items": [], "total": 0, "page": page, "per_page": per_page, "pages": 0}
     
     def get_item_by_barcode(self, barcode: str) -> Optional[Dict[str, Any]]:
         """Get item by barcode"""

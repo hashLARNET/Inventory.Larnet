@@ -72,11 +72,17 @@ class InventoryService:
             raise ItemNotFoundException(barcode=barcode)
         return item
     
-    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 1000) -> List[Item]:
-        offset = (page - 1) * per_page
-        return self.db.query(Item).options(
-            joinedload(Item.warehouse)
-        ).filter(Item.warehouse_id == warehouse_id).offset(offset).limit(per_page).all()
+    def get_items_by_warehouse(self, warehouse_id: str, offset: int = 0, limit: int = 50):
+        return self.db.query(Item)\
+            .options(
+                joinedload(Item.warehouse),  # Pre-cargar relaciones
+                selectinload(Item.withdrawal_items)
+            )\
+            .filter(Item.warehouse_id == warehouse_id)\
+            .offset(offset)\
+            .limit(limit)\
+            .all()
+    
     
     def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Item]:
         search_query = self.db.query(Item).options(

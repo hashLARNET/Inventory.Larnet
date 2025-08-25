@@ -1,7 +1,11 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, TypeVar, List, Generic
 from datetime import datetime
 import uuid
+
+
+T = TypeVar('T')
+
 
 class ItemBase(BaseModel):
     name: str
@@ -28,3 +32,10 @@ class Item(ItemBase):
     
     class Config:
         from_attributes = True
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    total: int
+    page: int
+    per_page: int
+    pages: int        

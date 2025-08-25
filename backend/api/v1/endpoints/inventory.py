@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from backend.database.session import get_db
-from backend.schemas.item import Item, ItemCreate, ItemUpdate
+from backend.schemas.item import Item, ItemCreate, ItemUpdate, PaginatedResponse
 from backend.services.inventory_service import InventoryService
 from backend.api.v1.dependencies import get_current_user
 from backend.models.user import User
@@ -48,7 +48,7 @@ def get_item_by_barcode(
     inventory_service = InventoryService(db)
     return inventory_service.get_item_by_barcode(barcode)
 
-@router.get("/items/warehouse/{warehouse_id}", response_model=List[Item])
+@router.get("/items/warehouse/{warehouse_id}", response_model=PaginatedResponse[Item])
 def get_items_by_warehouse(
     warehouse_id: str,
     page: int = 1,
@@ -57,7 +57,18 @@ def get_items_by_warehouse(
     current_user: User = Depends(get_current_user)
 ):
     inventory_service = InventoryService(db)
-    return inventory_service.get_items_by_warehouse(warehouse_id, page, per_page)
+    offset = (page - 1) * per_page   
+    all_items = inventory_service.get_items_by_warehouse(warehouse_id, 0, 10000)
+    total = len(all_items) if all_items else 0
+    items = inventory_service.get_items_by_warehouse(warehouse_id, offset, per_page)    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": (total + per_page - 1) // per_page
+    }
+
 
 @router.get("/items/search", response_model=List[Item])
 def search_items(

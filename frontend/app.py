@@ -761,61 +761,75 @@ class InventoryPage(ttk.Frame):
             self.load_summary_view()
     
     def load_items(self, search_query=None):
-        """Cargar items según filtros activos"""
-        # Limpiar vista detallada
-        for item in self.tree_detailed.get_children():
-            self.tree_detailed.delete(item)
+        """Cargar items con límite y optimizaciones"""
+        # Mostrar indicador de carga
+        self.tree_detailed.delete(*self.tree_detailed.get_children())
+        loading_item = self.tree_detailed.insert('', 'end', text='Cargando...', values=('', '', '', '', ''))
+        self.update_idletasks()
         
-        # Obtener filtro de obra
-        selected_obra = self.obra_filter_var.get()
-        if selected_obra == "Todas las obras":
-            selected_obra = None
-        
-        # Obtener items
-        warehouse_id = str(self.app.session_state.current_warehouse['id'])
-        
-        if search_query:
-            items = self.app.data_manager.search_items(search_query, warehouse_id)
-            # Filtrar por obra si está seleccionada
-            if selected_obra:
-                items = [item for item in items if item['obra'] == selected_obra]
-        else:
-            if selected_obra:
-                items = self.app.data_manager.get_items_by_obra(selected_obra, warehouse_id)
-            else:
-                items = self.app.data_manager.get_items_by_warehouse(warehouse_id)
-        
-        # Agregar items al árbol
-        for item in items:
-            # Color según stock
-            tags = []
-            if item['stock'] == 0:
-                tags.append('no_stock')
-            elif item['stock'] < 10:
-                tags.append('low_stock')
-            elif item['stock'] > 100:
-                tags.append('high_stock')
+        try:
+            warehouse_id = str(self.app.session_state.current_warehouse['id'])
             
-            self.tree_detailed.insert(
-                '',
-                'end',
-                text=item['name'],
-                values=(
-                    item['barcode'],
-                    item['stock'],
-                    item['obra'],
-                    item['n_factura'],
-                    self.app.session_state.current_warehouse['name']
-                ),
-                tags=tags + [str(item['id'])]  # Incluir ID en tags
-            )
-        
-        # Configurar tags
-        self.tree_detailed.tag_configure('no_stock', foreground='red', background='#ffeeee')
-        self.tree_detailed.tag_configure('low_stock', foreground='orange', background='#fff7e6')
-        self.tree_detailed.tag_configure('high_stock', foreground='green', background='#eeffee')
-        
-        self.update_stats(items)
+            # Limitar resultados
+            if search_query:
+                items_data = self.app.data_manager.search_items(search_query, warehouse_id)
+                # Extraer solo los items si es necesario
+                items = items_data if isinstance(items_data, list) else items_data.get('items', [])
+                items = items[:100]  # Limitar a 100 items
+            else:
+                selected_obra = self.obra_filter_var.get()
+                if selected_obra and selected_obra != "Todas las obras":
+                    items_data = self.app.data_manager.get_items_by_obra(selected_obra, warehouse_id)
+                    # Extraer solo los items si es necesario
+                    items = items_data if isinstance(items_data, list) else items_data.get('items', [])
+                    items = items[:100]  # Limitar a 100 items
+
+                else:
+                    items_data = self.app.data_manager.get_items_by_warehouse(warehouse_id)
+                    # Asegurarse de extraer solo los items de la respuesta
+                    if isinstance(items_data, dict) and 'items' in items_data:
+                        items = items_data['items']
+                    else:
+                        items = items_data if isinstance(items_data, list) else []
+                    items = items[:100]  # Limitar a 100 items
+            
+            # Eliminar indicador de carga
+            self.tree_detailed.delete(loading_item)
+            
+            # Insertar items en lotes
+            for i, item in enumerate(items):
+                if i % 10 == 0:  # Actualizar UI cada 10 items
+                    self.update_idletasks()
+                
+                tags = []
+                if item['stock'] == 0:
+                    tags.append('no_stock')
+                elif item['stock'] < 10:
+                    tags.append('low_stock')
+                elif item['stock'] > 100:
+                    tags.append('high_stock')
+                
+                self.tree_detailed.insert(
+                    '', 'end',
+                    text=item['name'],
+                    values=(item['barcode'], item['stock'], item['obra'], 
+                        item['n_factura'], self.app.session_state.current_warehouse['name']),
+                    tags=tags + [str(item['id'])]
+                )
+
+            self.tree_detailed.tag_configure('no_stock', foreground='red', background='#ffeeee')
+            self.tree_detailed.tag_configure('low_stock', foreground='orange', background='#fff7e6')
+            self.tree_detailed.tag_configure('high_stock', foreground='green', background='#eeffee')    
+            
+            self.update_stats(items)
+            
+            if len(items) >= 100:
+                self.stats_label.config(text=self.stats_label.cget("text") + " | Mostrando primeros 100 items")
+                
+        except Exception as e:
+            self.tree_detailed.delete(*self.tree_detailed.get_children())
+            self.tree_detailed.insert('', 'end', text=f'Error: {str(e)}', values=('', '', '', '', ''))
+
     
     def load_obra_summary(self):
         """Cargar resumen por obra"""
@@ -829,11 +843,18 @@ class InventoryPage(ttk.Frame):
         # Aplicar filtro de obra si existe
         selected_obra = self.obra_filter_var.get()
         if selected_obra and selected_obra != "Todas las obras":
-            all_items = self.app.data_manager.get_items_by_obra(selected_obra, warehouse_id)
+            items_data = self.app.data_manager.get_items_by_obra(selected_obra, warehouse_id)
+            # Extraer items de la respuesta
+            all_items = items_data if isinstance(items_data, list) else items_data.get('items', [])
             obras_to_show = [selected_obra]
         else:
-            all_items = self.app.data_manager.get_items_by_warehouse(warehouse_id)
-            obras_to_show = list(set(item['obra'] for item in all_items))
+            items_data = self.app.data_manager.get_items_by_warehouse(warehouse_id)
+            # Extraer items de la respuesta
+            if isinstance(items_data, dict) and 'items' in items_data:
+                all_items = items_data['items']
+            else:
+                all_items = items_data if isinstance(items_data, list) else []
+            obras_to_show = list(set(item['obra'] for item in all_items))   
         
         # Agrupar por obra
         obras_summary = {}
