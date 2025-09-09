@@ -45,12 +45,14 @@ class APIClient:
             print(f"Error obteniendo bodegas: {e}")
             return []
     
-    def get_items_by_warehouse(self, warehouse_id: str) -> List[Dict[str, Any]]:
+    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 50) -> List[Dict[str, Any]]:
         """Get items by warehouse"""
         try:
+            params = {"page": page, "per_page": per_page}
             response = requests.get(
                 f"{self.base_url}/inventory/items/warehouse/{warehouse_id}",
                 headers=self.headers,
+                params=params,
                 timeout=10
             )
             if response.status_code == 200:
@@ -75,10 +77,10 @@ class APIClient:
             print(f"Error buscando item: {e}")
             return None
     
-    def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search_items(self, query: str, warehouse_id: Optional[str] = None, page: int = 1, per_page: int = 50) -> List[Dict[str, Any]]:
         """Search items"""
         try:
-            params = {"q": query}
+            params = {"q": query, "page": page, "per_page": per_page}
             if warehouse_id:
                 params["warehouse_id"] = warehouse_id
             

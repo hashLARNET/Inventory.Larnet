@@ -44,40 +44,34 @@ def get_item_by_barcode(
 @router.get("/items/warehouse/{warehouse_id}", response_model=List[Item])
 def get_items_by_warehouse(
     warehouse_id: str,
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(50, ge=1, le=100, description="Items per page"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     inventory_service = InventoryService(db)
-    return inventory_service.get_items_by_warehouse(warehouse_id)
+    return inventory_service.get_items_by_warehouse(warehouse_id, page, per_page)
 
 @router.get("/items/search", response_model=List[Item])
 def search_items(
     q: str = Query(..., description="Search query"),
     warehouse_id: Optional[str] = Query(None, description="Filter by warehouse"),
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(50, ge=1, le=100, description="Items per page"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     inventory_service = InventoryService(db)
-    return inventory_service.search_items(q, warehouse_id)
+    return inventory_service.search_items(q, warehouse_id, page, per_page)
 
 @router.get("/items/obra/{obra}/warehouse/{warehouse_id}", response_model=List[Item])
 def get_items_by_obra(
     obra: str,
     warehouse_id: str,
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(50, ge=1, le=100, description="Items per page"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     inventory_service = InventoryService(db)
-    return inventory_service.get_items_by_obra(obra, warehouse_id)
-
-@router.get("/items/warehouse/{warehouse_id}", response_model=List[Item])
-def get_items_by_warehouse(
-    warehouse_id: str,
-    page: int = 1,      # Agregar
-    per_page: int = 50, # Agregar
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    inventory_service = InventoryService(db)
-    # Agregar offset/limit:
-    return inventory_service.get_items_by_warehouse(warehouse_id, page, per_page)
+    return inventory_service.get_items_by_obra(obra, warehouse_id, page, per_page)

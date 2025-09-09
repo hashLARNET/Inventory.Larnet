@@ -10,17 +10,16 @@ from backend.services.history_service import HistoryService
 import uuid
 
 
-@lru_cache(maxsize=32)
-def _get_warehouse_cached(self, warehouse_id: str) -> Tuple:
-    """Cache warehouse data since it changes rarely"""
-    warehouse = self.db.query(Warehouse).filter(Warehouse.id == warehouse_id).first()
-    return (warehouse.id, warehouse.name, warehouse.code) if warehouse else None
-
-
 class InventoryService:
     def __init__(self, db: Session):
         self.db = db
         self.history_service = HistoryService(db)
+    
+    @lru_cache(maxsize=32)
+    def _get_warehouse_cached(self, warehouse_id: str) -> Optional[Tuple[str, str, str]]:
+        """Cache warehouse data since it changes rarely"""
+        warehouse = self.db.query(Warehouse).filter(Warehouse.id == warehouse_id).first()
+        return (warehouse.id, warehouse.name, warehouse.code) if warehouse else None
     
     def create_item(self, item_data: ItemCreate) -> Item:
         # Verify warehouse exists
@@ -79,12 +78,14 @@ class InventoryService:
             raise ItemNotFoundException(barcode=barcode)
         return item
     
-    def get_items_by_warehouse(self, warehouse_id: str) -> List[Item]:
+    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 50) -> List[Item]:
+        offset = (page - 1) * per_page
         return self.db.query(Item).options(
             joinedload(Item.warehouse)  # Evita N+1 queries
-        ).filter(Item.warehouse_id == warehouse_id).all()
+        ).filter(Item.warehouse_id == warehouse_id).offset(offset).limit(per_page).all()
     
-    def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Item]:
+    def search_items(self, query: str, warehouse_id: Optional[str] = None, page: int = 1, per_page: int = 50) -> List[Item]:
+        offset = (page - 1) * per_page
         search_query = self.db.query(Item).options(
             joinedload(Item.warehouse)
         ).filter(
@@ -96,7 +97,7 @@ class InventoryService:
         if warehouse_id:
             search_query = search_query.filter(Item.warehouse_id == warehouse_id)
         
-        return search_query.all()
+        return search_query.offset(offset).limit(per_page).all()
     
     def update_item_stock(self, item_id: str, new_stock: int) -> Item:
         item = self.db.query(Item).filter(Item.id == item_id).first()
@@ -108,8 +109,9 @@ class InventoryService:
         self.db.refresh(item)
         return item
     
-    def get_items_by_obra(self, obra: str, warehouse_id: str) -> List[Item]:
+    def get_items_by_obra(self, obra: str, warehouse_id: str, page: int = 1, per_page: int = 50) -> List[Item]:
+        offset = (page - 1) * per_page
         return self.db.query(Item).filter(
             Item.obra == obra,
             Item.warehouse_id == warehouse_id
-        ).all()
+        ).offset(offset).limit(per_page).all()

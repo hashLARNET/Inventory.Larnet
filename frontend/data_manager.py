@@ -32,13 +32,13 @@ class DataManager:
         """Get all warehouses"""
         return self.api_client.get_warehouses()
     
-    def get_items_by_warehouse(self, warehouse_id: str) -> List[Dict[str, Any]]:
+    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 100) -> List[Dict[str, Any]]:
         """Get items from specific warehouse"""
-        return self.api_client.get_items_by_warehouse(warehouse_id)
+        return self.api_client.get_items_by_warehouse(warehouse_id, page, per_page)
     
-    def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search_items(self, query: str, warehouse_id: Optional[str] = None, page: int = 1, per_page: int = 100) -> List[Dict[str, Any]]:
         """Search items in warehouse"""
-        return self.api_client.search_items(query, warehouse_id)
+        return self.api_client.search_items(query, warehouse_id, page, per_page)
     
     def get_item_by_barcode(self, barcode: str) -> Optional[Dict[str, Any]]:
         """Get item by barcode"""

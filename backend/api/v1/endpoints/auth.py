@@ -1,16 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import timedelta
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from backend.database.session import get_db
 from backend.schemas.user import UserLogin, Token, User as UserSchema
 from backend.models.user import User
 from backend.core.security import verify_password, create_access_token
 from backend.config import settings
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter()
 
 @router.post("/login", response_model=Token)
-def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, user_credentials: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == user_credentials.username).first()
     
     if not user or not verify_password(user_credentials.password, user.hashed_password):
