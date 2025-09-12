@@ -45,21 +45,22 @@ class APIClient:
             print(f"Error obteniendo bodegas: {e}")
             return []
     
-    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 100) -> Dict[str, Any]:
-        """Get items by warehouse with pagination"""
+    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 50) -> List[Dict[str, Any]]:
+        """Get items by warehouse"""
         try:
+            params = {"page": page, "per_page": per_page}
             response = requests.get(
                 f"{self.base_url}/inventory/items/warehouse/{warehouse_id}",
                 headers=self.headers,
-                params={"page": page, "per_page": per_page},
+                params=params,
                 timeout=10
             )
             if response.status_code == 200:
                 return response.json()
-            return {"items": [], "total": 0, "page": page, "per_page": per_page, "pages": 0}
+            return []
         except Exception as e:
             print(f"Error obteniendo items: {e}")
-            return {"items": [], "total": 0, "page": page, "per_page": per_page, "pages": 0}
+            return []
     
     def get_item_by_barcode(self, barcode: str) -> Optional[Dict[str, Any]]:
         """Get item by barcode"""
@@ -76,10 +77,10 @@ class APIClient:
             print(f"Error buscando item: {e}")
             return None
     
-    def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search_items(self, query: str, warehouse_id: Optional[str] = None, page: int = 1, per_page: int = 50) -> List[Dict[str, Any]]:
         """Search items"""
         try:
-            params = {"q": query}
+            params = {"q": query, "page": page, "per_page": per_page}
             if warehouse_id:
                 params["warehouse_id"] = warehouse_id
             
@@ -94,21 +95,6 @@ class APIClient:
             return []
         except Exception as e:
             print(f"Error buscando items: {e}")
-            return []
-    
-    def get_items_by_obra(self, obra: str, warehouse_id: str) -> List[Dict[str, Any]]:
-        """Get items by obra"""
-        try:
-            response = requests.get(
-                f"{self.base_url}/inventory/items/obra/{obra}/warehouse/{warehouse_id}",
-                headers=self.headers,
-                timeout=10
-            )
-            if response.status_code == 200:
-                return response.json()
-            return []
-        except Exception as e:
-            print(f"Error obteniendo items por obra: {e}")
             return []
     
     def create_item(self, item_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -157,88 +143,3 @@ class APIClient:
         except Exception as e:
             print(f"Error obteniendo historial: {e}")
             return []
-        
-    def send_history_report_email(self, receiver_email: str, subject: str = None, 
-                                body: str = None, warehouse_name: str = None,
-                                warehouse_id: str = None) -> Dict[str, Any]:
-        """Send history report email through backend API"""
-        try:
-            payload = {
-                "receiver_email": receiver_email,
-                "subject": subject,
-                "body": body,
-                "warehouse_name": warehouse_name,
-                "warehouse_id": warehouse_id
-            }
-            
-            # Remove None values from payload
-            payload = {k: v for k, v in payload.items() if v is not None}
-            
-            response = requests.post(
-                f"{self.base_url}/email/send-history-report",
-                headers=self.headers,
-                json=payload,
-                timeout=60  # Longer timeout for email operations
-            )
-            
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {
-                    "success": False,
-                    "message": f"Error del servidor: {response.status_code} - {response.text}"
-                }
-                
-        except requests.exceptions.Timeout:
-            return {"success": False, "message": "Timeout: La operación de email tardó demasiado"}
-        except requests.exceptions.ConnectionError:
-            return {"success": False, "message": "Error de conexión: No se pudo conectar al servidor"}
-        except requests.exceptions.RequestException as e:
-            return {"success": False, "message": f"Error de red: {str(e)}"}
-        except Exception as e:
-            return {"success": False, "message": f"Error inesperado: {str(e)}"}
-    
-    def check_email_service(self) -> Dict[str, Any]:
-        """Check if email service is available"""
-        try:
-            response = requests.get(
-                f"{self.base_url}/email/health",
-                headers=self.headers,
-                timeout=10
-            )
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"status": "error", "message": f"Email service unavailable: {str(e)}"}
-        except Exception as e:
-            return {"status": "error", "message": f"Unexpected error: {str(e)}"}
-
-
-    
-    def get_obras_by_warehouse(self, warehouse_id: str) -> List[str]:
-        """Get available obras in warehouse"""
-        try:
-            response = requests.get(
-                f"{self.base_url}/inventory/obras/warehouse/{warehouse_id}",
-                headers=self.headers,
-                timeout=10
-            )
-            if response.status_code == 200:
-                return response.json()
-            return []
-        except Exception as e:
-            print(f"Error obteniendo obras: {e}")
-            return []
-
-    def transfer_item_between_obras(self, transfer_data: Dict[str, Any]) -> bool:
-        """Transfer item between obras"""
-        try:
-            response = requests.post(
-                f"{self.base_url}/inventory/transfer",
-                headers=self.headers,
-                json=transfer_data,
-                timeout=10
-            )
-            return response.status_code == 200
-        except Exception as e:
-            print(f"Error transfiriendo item: {e}")
-            return False

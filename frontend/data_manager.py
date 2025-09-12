@@ -1,15 +1,12 @@
 from frontend.api_client import APIClient
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 import uuid
-import re
-from frontend.utils.cache import DataCache
 
 class DataManager:
     def __init__(self):
         self.api_client = APIClient()
         self.current_user = None
         self.current_warehouse = None
-        self.cache = DataCache(ttl_seconds=300)
     
     def verify_login(self, username: str, password: str) -> Optional[Dict[str, Any]]:
         """Verify login credentials"""
@@ -35,30 +32,17 @@ class DataManager:
         """Get all warehouses"""
         return self.api_client.get_warehouses()
     
-    def get_items_by_warehouse(self, warehouse_id: str, page=1, per_page=50):
-        # Verificar caché
-        cached = self.cache.get('get_items_by_warehouse', warehouse_id, page, per_page)
-        if cached:
-            return cached
-        
-        # Obtener datos
-        data = self.api_client.get_items_by_warehouse(warehouse_id, page, per_page)
-        
-        # Guardar en caché
-        self.cache.set('get_items_by_warehouse', data, warehouse_id, page, per_page)
-        return data.get('items', []) if isinstance(data, dict) else data
+    def get_items_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 100) -> List[Dict[str, Any]]:
+        """Get items from specific warehouse"""
+        return self.api_client.get_items_by_warehouse(warehouse_id, page, per_page)
     
-    def search_items(self, query: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search_items(self, query: str, warehouse_id: Optional[str] = None, page: int = 1, per_page: int = 100) -> List[Dict[str, Any]]:
         """Search items in warehouse"""
-        return self.api_client.search_items(query, warehouse_id)
+        return self.api_client.search_items(query, warehouse_id, page, per_page)
     
     def get_item_by_barcode(self, barcode: str) -> Optional[Dict[str, Any]]:
         """Get item by barcode"""
         return self.api_client.get_item_by_barcode(barcode)
-    
-    def get_items_by_obra(self, obra: str, warehouse_id: str) -> List[Dict[str, Any]]:
-        """Get items by specific obra"""
-        return self.api_client.get_items_by_obra(obra, warehouse_id)
     
     def add_item(self, item_data: Dict[str, Any]) -> bool:
         """Add new item"""
@@ -111,135 +95,6 @@ class DataManager:
             return []
         return self.api_client.get_history_by_warehouse(str(self.current_warehouse["id"]))
     
-    def get_obras_by_warehouse(self, warehouse_id: str) -> List[str]:
-        """Get available obras in warehouse"""
-        return self.api_client.get_obras_by_warehouse(warehouse_id)
-
-    def transfer_item_between_obras(self, item_id: str, from_obra: str, to_obra: str, 
-                                   quantity: int, notes: str = "") -> bool:
-        """Transfer item between obras"""
-        transfer_data = {
-            "item_id": item_id,
-            "from_obra": from_obra,
-            "to_obra": to_obra,
-            "quantity": quantity,
-            "notes": notes
-        }
-        return self.api_client.transfer_item_between_obras(transfer_data)
-    
-    def get_warehouse_statistics(self, warehouse_id: str) -> Dict[str, Any]:
-        """Get warehouse statistics"""
-        data = self.get_items_by_warehouse(warehouse_id, page=1, per_page=1000)
-
-        items = data if isinstance(data, list) else data.get('items', [])
-        
-        if not items:
-            return {
-                'total_items': 0,
-                'total_stock': 0,
-                'obras_count': 0,
-                'low_stock_items': 0,
-                'no_stock_items': 0,
-                'top_obras': []
-            }
-        
-        # Calcular estadísticas
-        total_items = len(items)
-        total_stock = sum(item['stock'] for item in items)
-        obras = list(set(item['obra'] for item in items))
-        obras_count = len(obras)
-        low_stock_items = len([item for item in items if 0 < item['stock'] < 10])
-        no_stock_items = len([item for item in items if item['stock'] == 0])
-        
-        # Top obras por cantidad de items
-        obras_summary = {}
-        for item in items:
-            obra = item['obra']
-            if obra not in obras_summary:
-                obras_summary[obra] = {'items': 0, 'stock': 0}
-            obras_summary[obra]['items'] += 1
-            obras_summary[obra]['stock'] += item['stock']
-        
-        top_obras = sorted(
-            obras_summary.items(),
-            key=lambda x: x[1]['stock'],
-            reverse=True
-        )[:5]
-        
-        return {
-            'total_items': total_items,
-            'total_stock': total_stock,
-            'obras_count': obras_count,
-            'low_stock_items': low_stock_items,
-            'no_stock_items': no_stock_items,
-            'top_obras': top_obras
-        }
-    
-    def send_history_report_email(self, receiver_email: str, subject: str = None, 
-                                body: str = None, warehouse_name: str = None,
-                                warehouse_id: str = None) -> Dict[str, Any]:
-        """Send history report email - CORREGIDO: ahora acepta warehouse_id"""
-        # Si no se proporciona warehouse_id, usar el current_warehouse
-        if warehouse_id is None and self.current_warehouse:
-            warehouse_id = str(self.current_warehouse['id'])
-        
-        return self.api_client.send_history_report_email(
-            receiver_email=receiver_email,
-            subject=subject,
-            body=body,
-            warehouse_name=warehouse_name,
-            warehouse_id=warehouse_id
-        )
-    
-    def check_email_service(self) -> Dict[str, Any]:
-        """Check if email service is available"""
-        return self.api_client.check_email_service()
-    
-    def validate_email_format(self, email: str) -> Tuple[bool, str]:
-        """
-        Validación básica de formato de email con regex
-        """
-        try:
-            if not email or not isinstance(email, str):
-                return False, "El email no puede estar vacío"
-            
-            email = email.strip().lower()
-            
-            # Regex para validación básica de email
-            pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-            if not re.match(pattern, email):
-                return False, "Formato de email inválido"
-            
-            # Verificar que no sea un email temporal o desechable
-            disposable_domains = [
-                'mailinator.com', 'tempmail.com', 'guerrillamail.com',
-                '10minutemail.com', 'throwawaymail.com', 'yopmail.com'
-            ]
-            
-            domain = email.split('@')[1]
-            if domain in disposable_domains:
-                return False, "No se permiten emails temporales o desechables"
-            
-            # Verificar dominios comunes
-            common_domains = [
-                'gmail.com', 'hotmail.com', 'outlook.com', 'larnet.com',
-                'gmail.cl', 'hotmail.cl', 'outlook.es'
-            ]
-            
-            if domain not in common_domains:
-                return False, f"Email invalido, ingrese un email valido"
-            
-            return True, "Email válido"
-            
-        except Exception as e:
-            return False, f"Error validando email: {str(e)}"
-    
-    def is_valid_email(self, email: str) -> bool:
-        """Versión simplificada"""
-        is_valid, _ = self.validate_email_format(email)
-        return is_valid
-
-
     def logout(self):
         """Logout user"""
         self.current_user = None
